@@ -23,22 +23,25 @@ public class XxlJobController {
 
     @PostMapping("/beat")
     public ReturnT<String> beat() {
+        log.debug("接收到beat请求");
         return new ExecutorBizImpl().beat();
     }
 
     @PostMapping("/idleBeat")
     public ReturnT<String> idleBeat(@RequestBody IdleBeatParam param) {
+        log.debug("接收到idleBeat请求，{}",new Gson().toJson(param));
         return new ExecutorBizImpl().idleBeat(param);
     }
 
     @PostMapping("/run")
     public ReturnT<String> run(@RequestBody TriggerParam param) {
-        log.info(new Gson().toJson(param));
+        log.debug("接收到run请求，{}",new Gson().toJson(param));
         return new ExecutorBizImpl().run(param);
     }
 
     @PostMapping("/kill")
     public ReturnT<String> kill(@RequestBody KillParam param) {
+        log.debug("接收到kill请求，{}",new Gson().toJson(param));
         return new ExecutorBizImpl().kill(param);
     }
 
