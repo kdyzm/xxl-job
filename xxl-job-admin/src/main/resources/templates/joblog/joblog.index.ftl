@@ -94,9 +94,11 @@
                                         <th name="triggerTime" >${I18n.joblog_field_triggerTime}</th>
                                         <th name="triggerCode" >${I18n.joblog_field_triggerCode}</th>
                                         <th name="triggerMsg" >${I18n.joblog_field_triggerMsg}</th>
-					                  	<th name="handleTime" >${I18n.joblog_field_handleTime}</th>
+                                        <th name="jobGroupName" >${I18n.joblog_field_jobgroup}</th>
+                                        <th name="jobName" >${I18n.joblog_field_job}</th>
+<#--					                  	<th name="handleTime" >${I18n.joblog_field_handleTime}</th>-->
 					                  	<th name="handleCode" >${I18n.joblog_field_handleCode}</th>
-					                  	<th name="handleMsg" >${I18n.joblog_field_handleMsg}</th>
+<#--					                  	<th name="handleMsg" >${I18n.joblog_field_handleMsg}</th>-->
 					                  	<th name="handleMsg" >${I18n.system_opt}</th>
 					                </tr>
 				                </thead>

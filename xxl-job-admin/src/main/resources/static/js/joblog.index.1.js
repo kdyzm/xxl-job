@@ -141,13 +141,12 @@ $(function() {
 							return data?'<a class="logTips" href="javascript:;" >'+ I18n.system_show +'<span style="display:none;">'+ data +'</span></a>':I18n.system_empty;
 						}
 					},
-	                { 
-	                	"data": 'handleTime',
-                        "width":'20%',
-	                	"render": function ( data, type, row ) {
-	                		return data?moment(data).format("YYYY-MM-DD HH:mm:ss"):"";
-	                	}
-	                },
+                    {
+                        "data": 'jobGroupName'
+                    },
+                    {
+                        "data": 'jobName'
+                    },
 	                {
 						"data": 'handleCode',
                         "width":'10%',
@@ -164,13 +163,6 @@ $(function() {
                             }
                             return html;
 						}
-	                },
-	                { 
-	                	"data": 'handleMsg',
-                        "width":'10%',
-	                	"render": function ( data, type, row ) {
-	                		return data?'<a class="logTips" href="javascript:;" >'+ I18n.system_show +'<span style="display:none;">'+ data +'</span></a>':I18n.system_empty;
-	                	}
 	                },
 	                {
 						"data": 'handleMsg' ,

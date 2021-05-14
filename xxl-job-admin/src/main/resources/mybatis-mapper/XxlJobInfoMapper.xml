@@ -227,8 +227,20 @@
 		ORDER BY id ASC
 		LIMIT #{pagesize}
 	</select>
+	
+    <select id="selectByIds" resultType="com.xxl.job.admin.core.model.XxlJobInfo" resultMap="XxlJobInfo">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM xxl_job_info as t
+		WHERE t.id in 
+		<trim prefix="(" suffix=")">
+			<foreach collection="ids" index="index" item="id" separator=",">
+				#{id}
+			</foreach>
+		</trim>
+	</select>
 
-	<update id="scheduleUpdate" parameterType="com.xxl.job.admin.core.model.XxlJobInfo"  >
+    <update id="scheduleUpdate" parameterType="com.xxl.job.admin.core.model.XxlJobInfo"  >
 		UPDATE xxl_job_info
 		SET
 			trigger_last_time = #{triggerLastTime},

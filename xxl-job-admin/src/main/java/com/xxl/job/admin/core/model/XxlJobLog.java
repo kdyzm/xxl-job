@@ -13,6 +13,8 @@ public class XxlJobLog {
 	// job info
 	private int jobGroup;
 	private int jobId;
+	private String jobGroupName;
+	private String jobName;
 
 	// execute info
 	private String executorAddress;
@@ -33,6 +35,22 @@ public class XxlJobLog {
 
 	// alarm info
 	private int alarmStatus;
+
+	public String getJobGroupName() {
+		return jobGroupName;
+	}
+
+	public void setJobGroupName(String jobGroupName) {
+		this.jobGroupName = jobGroupName;
+	}
+
+	public String getJobName() {
+		return jobName;
+	}
+
+	public void setJobName(String jobName) {
+		this.jobName = jobName;
+	}
 
 	public long getId() {
 		return id;

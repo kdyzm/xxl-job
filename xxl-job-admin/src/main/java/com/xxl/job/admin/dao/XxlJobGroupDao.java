@@ -34,4 +34,11 @@ public interface XxlJobGroupDao {
                              @Param("appname") String appname,
                              @Param("title") String title);
 
+    /**
+     * 批量查询
+     *
+     * @param jobGroupIds
+     * @return
+     */
+    List<XxlJobGroup> selectByIds(@Param("ids") List<Integer> jobGroupIds);
 }

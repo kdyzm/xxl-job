@@ -15,21 +15,21 @@ import com.xxl.job.core.biz.model.KillParam;
 import com.xxl.job.core.biz.model.LogParam;
 import com.xxl.job.core.biz.model.LogResult;
 import com.xxl.job.core.biz.model.ReturnT;
+import com.xxl.job.core.handler.annotation.XxlJob;
 import com.xxl.job.core.util.DateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * index controller
@@ -91,6 +91,7 @@ public class JobLogController {
 										@RequestParam(required = false, defaultValue = "10") int length,
 										int jobGroup, int jobId, int logStatus, String filterTime) {
 
+		logger.info("开始执行");
 		// valid permission
 		JobInfoController.validPermission(request, jobGroup);	// 仅管理员支持查询全部；普通用户仅支持查询有权限的 jobGroup
 		
@@ -107,6 +108,32 @@ public class JobLogController {
 		
 		// page query
 		List<XxlJobLog> list = xxlJobLogDao.pageList(start, length, jobGroup, jobId, triggerTimeStart, triggerTimeEnd, logStatus);
+		List<Integer> jobGroupIds = list.stream().map(XxlJobLog::getJobGroup).collect(Collectors.toList());
+		List<Integer> jobIds = list.stream().map(XxlJobLog::getJobId).collect(Collectors.toList());
+		List<XxlJobGroup> jobGroups=xxlJobGroupDao.selectByIds(jobGroupIds);
+		List<XxlJobInfo> xxlJobs = xxlJobInfoDao.selectByIds(jobIds);
+		Map<Integer,XxlJobInfo> xxlJobInfoMap = new HashMap<>();
+		Map<Integer,XxlJobGroup> xxlJobGroupMap = new HashMap<>();
+		if(!CollectionUtils.isEmpty(jobGroups)){
+			xxlJobGroupMap = jobGroups.stream().collect(Collectors.toMap(XxlJobGroup::getId,i->i,(v1,v2)->v2));
+		}
+		if(!CollectionUtils.isEmpty(xxlJobs)){
+			xxlJobInfoMap = xxlJobs.stream().collect(Collectors.toMap(XxlJobInfo::getId,i->i,(v1,v2)->v2));
+		}
+		Map<Integer, XxlJobGroup> finalXxlJobGroupMap = xxlJobGroupMap;
+		Map<Integer, XxlJobInfo> finalXxlJobInfoMap = xxlJobInfoMap;
+		list.forEach(item->{
+			int jobGroup1 = item.getJobGroup();
+			int jobId1 = item.getJobId();
+			XxlJobGroup xxlJobGroup = finalXxlJobGroupMap.get(jobGroup1);
+			XxlJobInfo xxlJobInfo = finalXxlJobInfoMap.get(jobId1);
+			if(Objects.nonNull(xxlJobGroup)){
+				item.setJobGroupName(xxlJobGroup.getTitle());
+			}
+			if(Objects.nonNull(xxlJobInfo)){
+				item.setJobName(xxlJobInfo.getJobDesc());
+			}
+		});
 		int list_count = xxlJobLogDao.pageListCount(start, length, jobGroup, jobId, triggerTimeStart, triggerTimeEnd, logStatus);
 		
 		// package result

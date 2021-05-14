@@ -87,5 +87,17 @@
 			</if>
 		</trim>
 	</select>
+	
+	<select id="selectByIds" resultType="com.xxl.job.admin.core.model.XxlJobGroup" resultMap="XxlJobGroup">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM xxl_job_group as t
+		WHERE t.id in
+		<trim prefix="(" suffix=")">
+			<foreach collection="ids" index="index" item="id" separator=",">
+				#{id}
+			</foreach>
+		</trim>
+	</select>
 
 </mapper>
