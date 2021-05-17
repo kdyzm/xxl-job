@@ -110,8 +110,15 @@ public class JobLogController {
 		List<XxlJobLog> list = xxlJobLogDao.pageList(start, length, jobGroup, jobId, triggerTimeStart, triggerTimeEnd, logStatus);
 		List<Integer> jobGroupIds = list.stream().map(XxlJobLog::getJobGroup).collect(Collectors.toList());
 		List<Integer> jobIds = list.stream().map(XxlJobLog::getJobId).collect(Collectors.toList());
-		List<XxlJobGroup> jobGroups=xxlJobGroupDao.selectByIds(jobGroupIds);
-		List<XxlJobInfo> xxlJobs = xxlJobInfoDao.selectByIds(jobIds);
+		List<XxlJobGroup> jobGroups = new ArrayList<>();
+		if(!CollectionUtils.isEmpty(jobGroupIds)){
+            jobGroups = xxlJobGroupDao.selectByIds(jobGroupIds);	
+		}
+		List<XxlJobInfo> xxlJobs = new ArrayList<>();
+		if(!CollectionUtils.isEmpty(jobIds)){
+            xxlJobs = xxlJobInfoDao.selectByIds(jobIds);	
+		}
+		
 		Map<Integer,XxlJobInfo> xxlJobInfoMap = new HashMap<>();
 		Map<Integer,XxlJobGroup> xxlJobGroupMap = new HashMap<>();
 		if(!CollectionUtils.isEmpty(jobGroups)){
