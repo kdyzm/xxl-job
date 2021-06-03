@@ -34,5 +34,11 @@
 
 ## Introduction
 
-本项目是xxl-job项目的克隆项目，目的在于解决原项目中存在的xxl-job-core启用netty额外开启端口号9999的问题，这里使用spring-mvc替代netty的作用，重用原tomcat端口号，相关文章请查看：
-[xxl-job滥用netty导致的问题和解决方案](https://blog.kdyzm.cn/post/72)
+本项目是[xxl-job](https://github.com/xuxueli/xxl-job) 项目的克隆项目，目的在于优化和修复原项目中的问题(哇，这个xuxueli作者太懒了，足足有575个issue未解决，有些bug提了也是白提)。原项目中最新的版本号是2.3.0，本项目从2.4.0版本号开始
+
+|版本号|解决的问题|
+|---|---|
+|[2.4.0](https://github.com/kdyzm/xxl-job/releases/tag/2.4.0)|移除xxl-job-core中的netty server，使用spring mvc替代netty server的功能，重用客户端spring boot端口号，不再额外开启9999端口号|
+|[2.4.1](https://github.com/kdyzm/xxl-job/releases/tag/2.4.1)|添加xxl-job特殊前缀，防止接口路径和主项目冲突|
+|[2.4.2](https://github.com/kdyzm/xxl-job/releases/tag/2.4.2)|xxl-job-admin执行日志显示执行器和执行任务|
+|当前master|解决jobParam参数丢失问题|
