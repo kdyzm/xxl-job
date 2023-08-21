@@ -41,4 +41,4 @@
 |[2.4.0](https://github.com/kdyzm/xxl-job/releases/tag/2.4.0)|移除xxl-job-core中的netty server，使用spring mvc替代netty server的功能，重用客户端spring boot端口号，不再额外开启9999端口号|
 |[2.4.1](https://github.com/kdyzm/xxl-job/releases/tag/2.4.1)|添加xxl-job特殊前缀，防止接口路径和主项目冲突|
 |[2.4.2](https://github.com/kdyzm/xxl-job/releases/tag/2.4.2)|xxl-job-admin执行日志显示执行器和执行任务|
-|当前master|解决jobParam参数丢失问题|
+|当前master|解决jobParam参数丢失问题；执行日志和任务管理添加执行器筛选功能，解决执行器过多不方便筛选的问题|
