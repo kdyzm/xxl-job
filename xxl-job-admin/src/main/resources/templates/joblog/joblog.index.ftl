@@ -7,6 +7,8 @@
   	<link rel="stylesheet" href="${request.contextPath}/static/adminlte/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css">
   	<!-- daterangepicker -->
   	<link rel="stylesheet" href="${request.contextPath}/static/adminlte/bower_components/bootstrap-daterangepicker/daterangepicker.css">
+    <!-- bootstrap-select -->
+    <link rel="stylesheet" href="${request.contextPath}/static/adminlte/bower_components/bootstrap-select/bootstrap-select.min.css">
     <title>${I18n.admin_name}</title>
 </head>
 <body class="hold-transition skin-blue sidebar-mini <#if cookieMap?exists && cookieMap["xxljob_adminlte_settings"]?exists && "off" == cookieMap["xxljob_adminlte_settings"].value >sidebar-collapse</#if> ">
@@ -29,7 +31,8 @@
 	    		<div class="col-xs-2">
  					<div class="input-group">
 	                	<span class="input-group-addon">${I18n.jobinfo_field_jobgroup}</span>
-                		<select class="form-control" id="jobGroup"  paramVal="<#if jobInfo?exists>${jobInfo.jobGroup}</#if>" >
+                		<select class="selectpicker show-tick form-control" id="jobGroup"  
+                                paramVal="<#if jobInfo?exists>${jobInfo.jobGroup}</#if>" data-live-search="true">
                             <#if Request["XXL_JOB_LOGIN_IDENTITY"].role == 1>
                                 <option value="0" >${I18n.system_all}</option>  <#-- 仅管理员支持查询全部；普通用户仅支持查询有权限的 jobGroup -->
                             </#if>
@@ -178,5 +181,6 @@
 <script src="${request.contextPath}/static/adminlte/bower_components/moment/moment.min.js"></script>
 <script src="${request.contextPath}/static/adminlte/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
 <script src="${request.contextPath}/static/js/joblog.index.1.js"></script>
+<script src="${request.contextPath}/static/adminlte/bower_components/bootstrap-select/bootstrap-select.min.js"></script>
 </body>
 </html>

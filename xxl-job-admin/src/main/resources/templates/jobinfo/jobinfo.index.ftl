@@ -5,6 +5,8 @@
 	<@netCommon.commonStyle />
 	<!-- DataTables -->
   	<link rel="stylesheet" href="${request.contextPath}/static/adminlte/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css">
+    <!-- bootstrap-select -->
+    <link rel="stylesheet" href="${request.contextPath}/static/adminlte/bower_components/bootstrap-select/bootstrap-select.min.css">
     <title>${I18n.admin_name}</title>
 </head>
 <body class="hold-transition skin-blue sidebar-mini <#if cookieMap?exists && cookieMap["xxljob_adminlte_settings"]?exists && "off" == cookieMap["xxljob_adminlte_settings"].value >sidebar-collapse</#if>">
@@ -28,7 +30,7 @@
 	    		<div class="col-xs-3">
 	              	<div class="input-group">
 	                	<span class="input-group-addon">${I18n.jobinfo_field_jobgroup}</span>
-                		<select class="form-control" id="jobGroup" >
+                		<select class="selectpicker show-tick form-control" id="jobGroup" data-live-search="true">
                 			<#list JobGroupList as group>
                 				<option value="${group.id}" <#if jobGroup==group.id>selected</#if> >${group.title}</option>
                 			</#list>
@@ -536,5 +538,6 @@ exit 0
 <#-- cronGen -->
 <script src="${request.contextPath}/static/plugins/cronGen/cronGen<#if I18n.admin_i18n?default('')?length gt 0 >_${I18n.admin_i18n}</#if>.js"></script>
 <script src="${request.contextPath}/static/js/jobinfo.index.1.js"></script>
+<script src="${request.contextPath}/static/adminlte/bower_components/bootstrap-select/bootstrap-select.min.js"></script>
 </body>
 </html>
