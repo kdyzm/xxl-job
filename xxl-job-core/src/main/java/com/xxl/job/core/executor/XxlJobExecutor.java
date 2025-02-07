@@ -9,7 +9,6 @@ import com.xxl.job.core.thread.JobLogFileCleanThread;
 import com.xxl.job.core.thread.JobThread;
 import com.xxl.job.core.thread.TriggerCallbackThread;
 import com.xxl.job.core.util.IpUtil;
-import com.xxl.job.core.util.NetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

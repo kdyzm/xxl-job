@@ -9,6 +9,7 @@ import com.xxl.job.core.biz.model.HandleCallbackParam;
 import com.xxl.job.core.biz.websocket.EndpointType;
 import com.xxl.job.core.biz.websocket.WebSocketServer;
 import com.xxl.job.core.biz.websocket.model.ExecuteWrapperResult;
+import com.xxl.job.admin.handler.callback.JobLogCallbackHandler;
 import com.xxl.job.core.util.GsonTool;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,7 +27,7 @@ import java.util.List;
 @Component
 @ServerEndpoint("/taskExecute/{receiverId}/{clientIp}")
 public class TaskExecuteEndpoint extends WebSocketServer {
-    
+
     public TaskExecuteEndpoint() {
         log.info("注册taskExecute websocket endpoint");
     }
@@ -40,9 +41,9 @@ public class TaskExecuteEndpoint extends WebSocketServer {
     public void onMessage(String message) {
         log.info("receive message={}", message);
         ExecuteWrapperResult<JsonNode> req = JsonUtils.read(
-                message, 
+                message,
                 new TypeReference<ExecuteWrapperResult<JsonNode>>() {
-        });
+                });
         String path = req.getPath();
         switch (path) {
             case "callback":
@@ -53,6 +54,11 @@ public class TaskExecuteEndpoint extends WebSocketServer {
                 );
                 AdminBiz adminBiz = SpringUtils.getBean(AdminBiz.class);
                 adminBiz.callback(callbackParamList);
+                break;
+            case "logCallback":
+                SpringUtils
+                        .getBean(JobLogCallbackHandler.class)
+                        .handler(req.getData());
                 break;
             default:
                 log.info("无法识别的path：{}", path);

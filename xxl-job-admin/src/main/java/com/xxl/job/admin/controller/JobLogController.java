@@ -1,5 +1,6 @@
 package com.xxl.job.admin.controller;
 
+import cn.hutool.core.collection.CollUtil;
 import com.xxl.job.admin.core.exception.XxlJobException;
 import com.xxl.job.admin.core.complete.XxlJobCompleter;
 import com.xxl.job.admin.core.model.XxlJobGroup;
@@ -10,12 +11,15 @@ import com.xxl.job.admin.core.util.I18nUtil;
 import com.xxl.job.admin.dao.XxlJobGroupDao;
 import com.xxl.job.admin.dao.XxlJobInfoDao;
 import com.xxl.job.admin.dao.XxlJobLogDao;
+import com.xxl.job.admin.queue.MessageQueueManager;
 import com.xxl.job.core.biz.ExecutorBiz;
 import com.xxl.job.core.biz.model.KillParam;
 import com.xxl.job.core.biz.model.LogParam;
 import com.xxl.job.core.biz.model.LogResult;
 import com.xxl.job.core.biz.model.ReturnT;
-import com.xxl.job.core.handler.annotation.XxlJob;
+import com.xxl.job.core.biz.websocket.EndpointType;
+import com.xxl.job.core.biz.websocket.WebSocketServer;
+import com.xxl.job.core.biz.websocket.WebSocketServerPool;
 import com.xxl.job.core.util.DateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +33,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -172,20 +177,41 @@ public class JobLogController {
 
     @RequestMapping("/logDetailCat")
     @ResponseBody
-    public ReturnT<LogResult> logDetailCat(String executorAddress, long triggerTime, long logId, int fromLineNum) {
+    public ReturnT<LogResult> logDetailCat(
+            String executorAddress,
+            long triggerTime,
+            long logId,
+            int fromLineNum) {
         try {
-            ExecutorBiz executorBiz = XxlJobScheduler.getExecutorBiz(executorAddress);
-            ReturnT<LogResult> logResult = executorBiz.log(null, new LogParam(triggerTime, logId, fromLineNum));
-
-            // is end
-            if (logResult.getContent() != null && logResult.getContent().getFromLineNum() > logResult.getContent().getToLineNum()) {
-                XxlJobLog jobLog = xxlJobLogDao.load(logId);
-                if (jobLog.getHandleCode() > 0) {
-                    logResult.getContent().setEnd(true);
-                }
+            //查询对应的websocket连接
+            XxlJobLog jobLog = xxlJobLogDao.load(logId);
+            XxlJobGroup jobGroup = xxlJobGroupDao.load(jobLog.getJobGroup());
+            List<WebSocketServer> webSocketServers = WebSocketServerPool.getInstance().getBySystemAndReceiverId(
+                    jobGroup.getAppname(),
+                    EndpointType.TASK_EXECUTE)
+                    .orElse(null);
+            WebSocketServer webSocketServer = null;
+            if (CollUtil.isNotEmpty(webSocketServers)) {
+                webSocketServer = webSocketServers.stream().filter(item -> item.getClientIp().equals(executorAddress)).findAny().orElse(null);
+            }
+            if (Objects.isNull(webSocketServer)) {
+                return new ReturnT<>(ReturnT.FAIL_CODE, "未找到有效的websocket连接");
             }
 
-            return logResult;
+            ExecutorBiz executorBiz = XxlJobScheduler.getExecutorBiz(executorAddress);
+            executorBiz.log(
+                    webSocketServer,
+                    new LogParam(triggerTime, logId, fromLineNum)
+            );
+            //开始监听消息队列
+            MessageQueueManager instance = MessageQueueManager.getInstance();
+            Object callBackResult;
+            while (Objects.isNull(callBackResult = instance.take("logCallback", logId))) {
+                TimeUnit.SECONDS.sleep(1);
+            }
+            logger.info("接收成功消息，即将返回");
+            ReturnT<LogResult> returnResult = (ReturnT<LogResult>)callBackResult;
+            return returnResult;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return new ReturnT<LogResult>(ReturnT.FAIL_CODE, e.getMessage());

@@ -28,20 +28,16 @@ public final class WebSocketServerPool {
         userEndpointMap = new ConcurrentHashMap<>();
     }
 
-    private String getKey(String receiverId, String clientIp) {
-        return receiverId + "-" + clientIp;
-    }
-
     /**
      * 添加用户的WsServerEndpoint内存
      *
      * @param clientIp
-     * @param receiverId 用户Id
+     * @param appName 用户Id
      * @param endpoint   WsServerEndpoint
      */
-    public void addEndpoint(String receiverId, String clientIp, WebSocketServer endpoint) {
+    public void addEndpoint(String appName, String clientIp, WebSocketServer endpoint) {
 
-        Objects.requireNonNull(receiverId);
+        Objects.requireNonNull(appName);
         Objects.requireNonNull(endpoint);
 
         EndpointType endpointType = endpoint.getEndpointType();
@@ -51,7 +47,7 @@ public final class WebSocketServerPool {
         // endpointType => endpoint列表
         Map<EndpointType, List<WebSocketServer>> endpointServerMap
                 = userEndpointMap.computeIfAbsent(
-                receiverId
+                appName
                 , element -> new ConcurrentHashMap<>());
 
         List<WebSocketServer> endpointList = endpointServerMap.computeIfAbsent(
@@ -62,7 +58,7 @@ public final class WebSocketServerPool {
         );
 
         log.info("EndpointPool addEndpoint. receiverId:{}, endpointServerMapSize:{}," +
-                        " endpointListSize: {}, newSessionId:{}", receiverId,
+                        " endpointListSize: {}, newSessionId:{}", appName,
                 endpointServerMap.size(), endpointList.size(), endpoint.getSession().getId());
 
         // 1.缓存当前用户最新的session
@@ -71,12 +67,12 @@ public final class WebSocketServerPool {
         WebSocketWatchDog.onConnectionCreated(endpoint);
 
         log.info("EndpointPool addEndpoint success.  receiverId:{}, sessionSize:{}, newSessionId:{}",
-                receiverId, endpointServerMap.size(), endpoint.getSession().getId());
+                appName, endpointServerMap.size(), endpoint.getSession().getId());
 
         // 2.每个用户每种消息类型最多保留WS_MAX_CONNECTION个session
         while (endpointList.size() > WebSocketConstants.WS_MAX_CONNECTION) {
 
-            log.info("EndpointPool addEndpoint remove connection. receiverId: {}, session size > {}", receiverId, WebSocketConstants.WS_MAX_CONNECTION);
+            log.info("EndpointPool addEndpoint remove connection. receiverId: {}, session size > {}", appName, WebSocketConstants.WS_MAX_CONNECTION);
 
             //删除缓存
             WebSocketServer removeServer = endpointList.remove(0);
@@ -89,7 +85,7 @@ public final class WebSocketServerPool {
 
             } catch (IOException e) {
                 log.error("EndpointPool addEndpoint remove connection error.messageObject:{}, " +
-                        "receiverId: {}, session size: {}", receiverId, endpointServerMap.size(), e);
+                        "receiverId: {}, session size: {}", appName, endpointServerMap.size(), e);
             }
 
         }
@@ -99,18 +95,18 @@ public final class WebSocketServerPool {
     /**
      * 通过sessionId移除Endpoint缓存
      *
-     * @param receiverId 用户名
+     * @param appName 用户名
      */
     public void removeEndpointBySessionId(
-            String receiverId,
+            String appName,
             String clientIp,
             String sessionId) {
 
-        Objects.requireNonNull(receiverId);
+        Objects.requireNonNull(appName);
         Objects.requireNonNull(sessionId);
 
         Map<EndpointType, List<WebSocketServer>> endpointMap
-                = userEndpointMap.get(receiverId);
+                = userEndpointMap.get(appName);
 
         // removeIf线程安全, 与add()互斥
         endpointMap.values().forEach(list -> list.removeIf(endpoint -> {
@@ -118,20 +114,20 @@ public final class WebSocketServerPool {
             Session session = endpoint.getSession();
 
             log.info("remove connection, receiverId: {}, targetSessionId: {}, " +
-                    "currentSessionId: {}", receiverId, sessionId, session.getId());
+                    "currentSessionId: {}", appName, sessionId, session.getId());
             if (!sessionId.equals(session.getId())) {
                 return false;
             }
 
             log.info("remove connection matched,receiverId: {}, targetSessionId: {}, " +
-                    "currentSessionId: {}", receiverId, sessionId, session.getId());
+                    "currentSessionId: {}", appName, sessionId, session.getId());
 
             try {
                 WebSocketWatchDog.onClosedNormally(endpoint);
                 session.close();
             } catch (IOException e) {
                 log.error("EndpointPool remove connection error.receiverId: {}," +
-                        " sessionId: {}", receiverId, session, e);
+                        " sessionId: {}", appName, session, e);
             } catch (Exception e) {
                 // 新增try-catch + log print测试是否这里出现问题
                 log.error("", e);
@@ -144,11 +140,10 @@ public final class WebSocketServerPool {
 
     }
 
-    public Optional<List<WebSocketServer>> getBySystemAndReceiverId(String receiverId,
-                                                                    String clientIp,
+    public Optional<List<WebSocketServer>> getBySystemAndReceiverId(String appName,
                                                                     EndpointType endpointType) {
         Map<EndpointType, List<WebSocketServer>> endpointTypeListMap
-                = userEndpointMap.get(receiverId);
+                = userEndpointMap.get(appName);
         if (Objects.isNull(endpointTypeListMap)) {
             return Optional.empty();
         }

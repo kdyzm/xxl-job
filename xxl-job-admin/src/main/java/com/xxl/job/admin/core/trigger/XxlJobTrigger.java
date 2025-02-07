@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * xxl-job trigger
@@ -148,24 +149,24 @@ public class XxlJobTrigger {
         triggerParam.setBroadcastTotal(total);
 
         // 3、init address
-        WebSocketServer address = null;
+        WebSocketServer routedServer = null;
         ReturnT<WebSocketServer> routeAddressResult = null;
+        //根据appName和连接类型查询所有的websockt连接列表
         List<WebSocketServer> webSocketServers = WebSocketServerPool.getInstance().getBySystemAndReceiverId(
                 triggerParam.getAppName(),
-                null,
                 EndpointType.TASK_EXECUTE
         ).orElse(null);
         if (CollUtil.isNotEmpty(webSocketServers)) {
             if (ExecutorRouteStrategyEnum.SHARDING_BROADCAST == executorRouteStrategyEnum) {
                 if (index < group.getRegistryList().size()) {
-                    address = webSocketServers.get(index);
+                    routedServer = webSocketServers.get(index);
                 } else {
-                    address = webSocketServers.get(0);
+                    routedServer = webSocketServers.get(0);
                 }
             } else {
                 routeAddressResult = executorRouteStrategyEnum.getRouter().route(triggerParam, webSocketServers);
                 if (routeAddressResult.getCode() == ReturnT.SUCCESS_CODE) {
-                    address = routeAddressResult.getContent();
+                    routedServer = routeAddressResult.getContent();
                 }
             }
         } else {
@@ -175,7 +176,7 @@ public class XxlJobTrigger {
 
         // 4、trigger remote executor
         ReturnT<String> triggerResult = null;
-        triggerResult = runExecutor(triggerParam, address);
+        triggerResult = runExecutor(triggerParam, routedServer);
 //        if (address != null) {
 //            triggerResult = runExecutor(triggerParam, address);
 //        } else {
@@ -203,7 +204,9 @@ public class XxlJobTrigger {
                 .append(triggerResult.getMsg() != null ? triggerResult.getMsg() : "");
 
         // 6、save log trigger-info
-        jobLog.setExecutorAddress(triggerParam.getAppName());
+        if (Objects.nonNull(routedServer)) {
+            jobLog.setExecutorAddress(routedServer.getClientIp());
+        }
         jobLog.setExecutorHandler(jobInfo.getExecutorHandler());
         jobLog.setExecutorParam(jobInfo.getExecutorParam());
         jobLog.setExecutorShardingParam(shardingParam);

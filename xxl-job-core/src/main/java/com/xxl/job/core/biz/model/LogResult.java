@@ -16,11 +16,19 @@ public class LogResult implements Serializable {
         this.logContent = logContent;
         this.isEnd = isEnd;
     }
-
+    private Long logId;
     private int fromLineNum;
     private int toLineNum;
     private String logContent;
     private boolean isEnd;
+
+    public Long getLogId() {
+        return logId;
+    }
+
+    public void setLogId(Long logId) {
+        this.logId = logId;
+    }
 
     public int getFromLineNum() {
         return fromLineNum;
