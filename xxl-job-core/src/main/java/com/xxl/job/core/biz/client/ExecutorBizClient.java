@@ -1,14 +1,18 @@
+/*
 package com.xxl.job.core.biz.client;
 
 import com.xxl.job.core.biz.ExecutorBiz;
 import com.xxl.job.core.biz.model.*;
+import com.xxl.job.core.biz.websocket.WebSocketServer;
 import com.xxl.job.core.util.XxlJobRemotingUtil;
 
+*/
 /**
  * admin api test
  *
  * @author xuxueli 2017-07-28 22:14:52
- */
+ *//*
+
 public class ExecutorBizClient implements ExecutorBiz {
 
     public ExecutorBizClient() {
@@ -34,7 +38,7 @@ public class ExecutorBizClient implements ExecutorBiz {
     }
 
     @Override
-    public ReturnT<String> idleBeat(IdleBeatParam idleBeatParam){
+    public ReturnT<WebSocketServer> idleBeat(IdleBeatParam idleBeatParam){
         return XxlJobRemotingUtil.postBody(addressUrl+"xxl-job/idleBeat", accessToken, timeout, idleBeatParam, String.class);
     }
 
@@ -54,3 +58,4 @@ public class ExecutorBizClient implements ExecutorBiz {
     }
 
 }
+*/

@@ -45,6 +45,21 @@ public class JobInfoController {
 	private XxlJobGroupDao xxlJobGroupDao;
 	@Resource
 	private XxlJobService xxlJobService;
+
+
+	@RequestMapping("/trigger")
+	@ResponseBody
+	//@PermissionLimit(limit = false)
+	public ReturnT<String> triggerJob(int id, String executorParam, String addressList) {
+		// force cover job param
+		if (executorParam == null) {
+			executorParam = "";
+		}
+
+		JobTriggerPoolHelper.trigger(id, TriggerTypeEnum.MANUAL, -1, null, executorParam, addressList);
+		return ReturnT.SUCCESS;
+	}
+	
 	
 	@RequestMapping
 	public String index(HttpServletRequest request, Model model, @RequestParam(required = false, defaultValue = "-1") int jobGroup) {
@@ -135,19 +150,6 @@ public class JobInfoController {
 	@ResponseBody
 	public ReturnT<String> start(int id) {
 		return xxlJobService.start(id);
-	}
-	
-	@RequestMapping("/trigger")
-	@ResponseBody
-	//@PermissionLimit(limit = false)
-	public ReturnT<String> triggerJob(int id, String executorParam, String addressList) {
-		// force cover job param
-		if (executorParam == null) {
-			executorParam = "";
-		}
-
-		JobTriggerPoolHelper.trigger(id, TriggerTypeEnum.MANUAL, -1, null, executorParam, addressList);
-		return ReturnT.SUCCESS;
 	}
 
 	@RequestMapping("/nextTriggerTime")

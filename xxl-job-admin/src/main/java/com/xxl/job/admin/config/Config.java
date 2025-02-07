@@ -1,31 +1,22 @@
 package com.xxl.job.admin.config;
 
-import com.alibaba.ttl.threadpool.TtlExecutors;
+import cn.kdyzm.util.spring.SpringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 
-import java.util.concurrent.*;
 
 /**
  * @author kdyzm
  * @date 2021/9/16
  */
 @Configuration
+@Import({SpringUtils.class})
 public class Config {
 
-    /**
-     * 线程池
-     */
-    /*@Bean
-    public ExecutorService threadPoolExecutor() {
-        return TtlExecutors.getTtlExecutorService(new ThreadPoolExecutor(
-                8,
-                12,
-                60L,
-                TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(1000),
-                Executors.defaultThreadFactory(),
-                new ThreadPoolExecutor.CallerRunsPolicy()
-        ));
-    }*/
+    @Bean
+    public ServerEndpointExporter serverEndpointExporter() {
+        return new ServerEndpointExporter();
+    }
 }

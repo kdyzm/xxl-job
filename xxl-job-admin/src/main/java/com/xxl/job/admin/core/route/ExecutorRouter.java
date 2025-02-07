@@ -1,5 +1,6 @@
 package com.xxl.job.admin.core.route;
 
+import com.xxl.job.core.biz.websocket.WebSocketServer;
 import com.xxl.job.core.biz.model.ReturnT;
 import com.xxl.job.core.biz.model.TriggerParam;
 import org.slf4j.Logger;
@@ -19,6 +20,6 @@ public abstract class ExecutorRouter {
      * @param addressList
      * @return  ReturnT.content=address
      */
-    public abstract ReturnT<String> route(TriggerParam triggerParam, List<String> addressList);
+    public abstract ReturnT<WebSocketServer> route(TriggerParam triggerParam, List<WebSocketServer> addressList);
 
 }

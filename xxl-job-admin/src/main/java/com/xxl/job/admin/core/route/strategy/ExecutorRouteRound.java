@@ -3,6 +3,7 @@ package com.xxl.job.admin.core.route.strategy;
 import com.xxl.job.admin.core.route.ExecutorRouter;
 import com.xxl.job.core.biz.model.ReturnT;
 import com.xxl.job.core.biz.model.TriggerParam;
+import com.xxl.job.core.biz.websocket.WebSocketServer;
 
 import java.util.List;
 import java.util.Random;
@@ -38,9 +39,9 @@ public class ExecutorRouteRound extends ExecutorRouter {
     }
 
     @Override
-    public ReturnT<String> route(TriggerParam triggerParam, List<String> addressList) {
-        String address = addressList.get(count(triggerParam.getJobId())%addressList.size());
-        return new ReturnT<String>(address);
+    public ReturnT<WebSocketServer> route(TriggerParam triggerParam, List<WebSocketServer> addressList) {
+        WebSocketServer address = addressList.get(count(triggerParam.getJobId())%addressList.size());
+        return new ReturnT<>(address);
     }
 
 }
