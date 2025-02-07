@@ -230,12 +230,25 @@ public class JobLogController {
         if (ReturnT.SUCCESS_CODE != log.getTriggerCode()) {
             return new ReturnT<String>(500, I18nUtil.getString("joblog_kill_log_limit"));
         }
-
+        XxlJobGroup jobGroup = xxlJobGroupDao.load(jobInfo.getJobGroup());
         // request of kill
         ReturnT<String> runResult = null;
         try {
+            List<WebSocketServer> webSocketServers = WebSocketServerPool.getInstance().getBySystemAndReceiverId(
+                    jobGroup.getAppname(),
+                    EndpointType.TASK_EXECUTE)
+                    .orElse(null);
+            WebSocketServer webSocketServer = null;
+            if (CollUtil.isNotEmpty(webSocketServers)) {
+                webSocketServer = webSocketServers.stream().filter(
+                        item -> item.getClientIp().equals(log.getExecutorAddress()))
+                        .findAny().orElse(null);
+            }
+            if (Objects.isNull(webSocketServer)) {
+                return new ReturnT<>(ReturnT.FAIL_CODE, "未找到有效的websocket连接");
+            }
             ExecutorBiz executorBiz = XxlJobScheduler.getExecutorBiz(log.getExecutorAddress());
-            runResult = executorBiz.kill(null, new KillParam(jobInfo.getId()));
+            runResult = executorBiz.kill(webSocketServer, new KillParam(jobInfo.getId()));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             runResult = new ReturnT<String>(500, e.getMessage());
