@@ -1,0 +1,19 @@
+server:
+  port: 8024
+
+spring:
+  application:
+    name: xxl-job-client-demo
+
+
+xxl:
+  job:
+    admin:
+      addresses: ws://127.0.0.1:8080/xxl-job-admin
+    accessToken: default_token
+    executor:
+      title: xxl-job-client-demo
+      appname: xxl-job-client-demo
+      logpath: ./logs
+      logretentiondays: 30
+      port: 8080

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- 级别从高到低 OFF 、 FATAL 、 ERROR 、 WARN 、 INFO 、 DEBUG 、 TRACE 、 ALL -->
+<!-- 日志输出规则 根据当前ROOT 级别，日志输出时，级别高于root默认的级别时 会输出 -->
+<!-- 以下 每个配置的 filter 是过滤掉输出文件里面，会出现高级别文件，依然出现低级别的日志信息，通过filter 过滤只记录本级别的日志 -->
+<!-- scan 当此属性设置为true时，配置文件如果发生改变，将会被重新加载，默认值为true。 -->
+<!-- scanPeriod 设置监测配置文件是否有修改的时间间隔，如果没有给出时间单位，默认单位是毫秒。当scan为true时，此属性生效。默认的时间间隔为1分钟。 -->
+<!-- debug 当此属性设置为true时，将打印出logback内部日志信息，实时查看logback运行状态。默认值为false。 -->
+<configuration scan="false" scanPeriod="60 seconds" debug="false">
+
+    <!-- 动态日志级别 -->
+    <jmxConfigurator/>
+
+    <!-- 定义日志文件 输出位置 -->
+    <property name="log.home_dir" value="./logs"/>
+    <property name="log.app_name" value="xxl-job-client-demo"/>
+    <!-- 日志最大的历史 30天 -->
+    <property name="console.log.pattern"
+              value="%red(%d{yyyy-MM-dd HH:mm:ss}) %green([%thread]) %highlight(%-5level) %boldMagenta(%logger{36}) - %msg%n"/>
+
+    <!-- ConsoleAppender 控制台输出日志 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                <!-- 设置日志输出格式 -->
+                <pattern>${console.log.pattern}</pattern>
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- INFO级别日志 appender -->
+    <appender name="INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+                    <level>INFO</level>
+                    <onMatch>ACCEPT</onMatch>
+                    <onMismatch>DENY</onMismatch>
+                </filter>-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${log.home_dir}/%d{yyyy-MM-dd}/${log.app_name}-%i.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+            <MaxFileSize>50MB</MaxFileSize>
+            <totalSizeCap>500MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <!--com.zgd包下的类的日志输出-->
+    <logger name="com.cosmoplat" additivity="false" level="DEBUG">
+        <appender-ref ref="INFO"/>
+        <!--打印控制台-->
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- root级别   DEBUG -->
+    <root>
+        <!-- 打印debug级别日志及以上级别日志 -->
+        <level value="info"/>
+        <!-- 控制台输出 -->
+        <appender-ref ref="CONSOLE"/>
+
+        <appender-ref ref="INFO"/>
+    </root>
+</configuration>
