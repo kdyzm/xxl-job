@@ -97,7 +97,6 @@ public class JobLogController {
                                         @RequestParam(required = false, defaultValue = "10") int length,
                                         int jobGroup, int jobId, int logStatus, String filterTime) {
 
-        logger.info("开始执行");
         // valid permission
         JobInfoController.validPermission(request, jobGroup);    // 仅管理员支持查询全部；普通用户仅支持查询有权限的 jobGroup
 
@@ -148,7 +147,6 @@ public class JobLogController {
             }
         });
         int list_count = xxlJobLogDao.pageListCount(start, length, jobGroup, jobId, triggerTimeStart, triggerTimeEnd, logStatus);
-
         // package result
         Map<String, Object> maps = new HashMap<String, Object>();
         maps.put("recordsTotal", list_count);        // 总记录数

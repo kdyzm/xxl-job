@@ -56,14 +56,7 @@ public class JobGroupController {
 		if(CollUtil.isNotEmpty(list)){
 			for (XxlJobGroup jobGroup : list) {
 				String appName = jobGroup.getAppname();
-				Map<EndpointType, List<WebSocketServer>> allWebSocketServers = WebSocketServerPool.getInstance().getAllWebSocketServersByAppName(appName);
-				if(MapUtil.isNotEmpty(allWebSocketServers)){
-					jobGroup.setRegistryList(
-							allWebSocketServers.values().stream().flatMap(List::stream)
-							.map(WebSocketServer::getClientIp)
-							.collect(Collectors.toList())
-					);
-				}
+				jobGroup.setRegistryList(WebSocketServerPool.getInstance().getRegisterIps(appName));
 			}
 		}
 		int list_count = xxlJobGroupDao.pageListCount(start, length, appname, title);

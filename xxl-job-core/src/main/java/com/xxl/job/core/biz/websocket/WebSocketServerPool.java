@@ -1,13 +1,11 @@
 package com.xxl.job.core.biz.websocket;
 
+import cn.hutool.core.map.MapUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.websocket.Session;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -32,8 +30,8 @@ public final class WebSocketServerPool {
      * 添加用户的WsServerEndpoint内存
      *
      * @param clientIp
-     * @param appName 用户Id
-     * @param endpoint   WsServerEndpoint
+     * @param appName  用户Id
+     * @param endpoint WsServerEndpoint
      */
     public void addEndpoint(String appName, String clientIp, WebSocketServer endpoint) {
 
@@ -140,10 +138,10 @@ public final class WebSocketServerPool {
 
     }
 
-    public Map<EndpointType, List<WebSocketServer>> getAllWebSocketServersByAppName(String appName){
+    public Map<EndpointType, List<WebSocketServer>> getAllWebSocketServersByAppName(String appName) {
         return userEndpointMap.get(appName);
     }
-    
+
     public Optional<List<WebSocketServer>> getBySystemAndReceiverId(String appName,
                                                                     EndpointType endpointType) {
         Map<EndpointType, List<WebSocketServer>> endpointTypeListMap
@@ -164,6 +162,16 @@ public final class WebSocketServerPool {
         public static WebSocketServerPool getInstance() {
             return INSTANCE;
         }
+    }
+
+    public List<String> getRegisterIps(String appName) {
+        Map<EndpointType, List<WebSocketServer>> allWebSocketServers = WebSocketServerPool.getInstance().getAllWebSocketServersByAppName(appName);
+        if (MapUtil.isNotEmpty(allWebSocketServers)) {
+            return allWebSocketServers.values().stream().flatMap(List::stream)
+                    .map(WebSocketServer::getClientIp)
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
     }
 
 }
