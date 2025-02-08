@@ -87,7 +87,7 @@
                             <label for="lastname" class="col-sm-2 control-label">${I18n.jobgroup_field_title}<font color="red">*</font></label>
                             <div class="col-sm-10"><input type="text" class="form-control" name="title" placeholder="${I18n.system_please_input}${I18n.jobgroup_field_title}" maxlength="12" ></div>
                         </div>
-                        <div class="form-group">
+<#--                        <div class="form-group">
                             <label for="lastname" class="col-sm-2 control-label">${I18n.jobgroup_field_addressType}<font color="red">*</font></label>
                             <div class="col-sm-10">
                                 <input type="radio" name="addressType" value="0" checked />${I18n.jobgroup_field_addressType_0}
@@ -100,7 +100,7 @@
                             <div class="col-sm-10">
                                 <textarea class="textarea" name="addressList" maxlength="20000" placeholder="${I18n.jobgroup_field_registryList_placeholder}" readonly="readonly" style="background-color:#eee; width: 100%; height: 100px; font-size: 14px; line-height: 15px; border: 1px solid #dddddd; padding: 5px;"></textarea>
                             </div>
-                        </div>
+                        </div>-->
                         <hr>
                         <div class="form-group">
                             <div class="col-sm-offset-3 col-sm-6">
