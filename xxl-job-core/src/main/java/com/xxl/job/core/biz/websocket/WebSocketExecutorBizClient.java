@@ -5,10 +5,13 @@ import cn.kdyzm.json.util.JsonUtils;
 import com.xxl.job.core.biz.ExecutorBiz;
 import com.xxl.job.core.biz.model.*;
 import com.xxl.job.core.biz.websocket.model.ExecuteWrapperResult;
+import com.xxl.job.core.queue.MessageQueueManager;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author kdyzm
@@ -35,7 +38,23 @@ public class WebSocketExecutorBizClient implements ExecutorBiz {
 
     @Override
     public ReturnT<String> run(WebSocketServer webSocketServer, TriggerParam triggerParam) {
-        return this.sendMessage("run", webSocketServer, triggerParam);
+        this.sendMessage("run", webSocketServer, triggerParam);
+        //开始监听消息队列
+        MessageQueueManager instance = MessageQueueManager.getInstance();
+        Object callBackResult;
+        while (Objects.isNull(callBackResult = instance.take("triggerRunCallback", triggerParam.getJobId()))) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(100);
+            } catch (InterruptedException e) {
+                log.error("", e);
+            }
+        }
+        ReturnT<Integer> returnResult = (ReturnT<Integer>) callBackResult;
+        ReturnT<String> returnReulst1 = new ReturnT<>(
+                returnResult.getCode(),
+                returnResult.getMsg()
+        );
+        return returnReulst1;
     }
 
     @Override

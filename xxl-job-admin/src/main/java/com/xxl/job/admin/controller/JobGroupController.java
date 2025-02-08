@@ -1,5 +1,7 @@
 package com.xxl.job.admin.controller;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.map.MapUtil;
 import com.xxl.job.admin.core.model.XxlJobGroup;
 import com.xxl.job.admin.core.model.XxlJobRegistry;
 import com.xxl.job.admin.core.util.I18nUtil;
@@ -7,6 +9,9 @@ import com.xxl.job.admin.dao.XxlJobGroupDao;
 import com.xxl.job.admin.dao.XxlJobInfoDao;
 import com.xxl.job.admin.dao.XxlJobRegistryDao;
 import com.xxl.job.core.biz.model.ReturnT;
+import com.xxl.job.core.biz.websocket.EndpointType;
+import com.xxl.job.core.biz.websocket.WebSocketServer;
+import com.xxl.job.core.biz.websocket.WebSocketServerPool;
 import com.xxl.job.core.enums.RegistryConfig;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,6 +22,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * job group controller
@@ -47,13 +53,27 @@ public class JobGroupController {
 
 		// page query
 		List<XxlJobGroup> list = xxlJobGroupDao.pageList(start, length, appname, title);
+		if(CollUtil.isNotEmpty(list)){
+			for (XxlJobGroup jobGroup : list) {
+				String appName = jobGroup.getAppname();
+				Map<EndpointType, List<WebSocketServer>> allWebSocketServers = WebSocketServerPool.getInstance().getAllWebSocketServersByAppName(appName);
+				if(MapUtil.isNotEmpty(allWebSocketServers)){
+					jobGroup.setRegistryList(
+							allWebSocketServers.values().stream().flatMap(List::stream)
+							.map(WebSocketServer::getClientIp)
+							.collect(Collectors.toList())
+					);
+				}
+			}
+		}
 		int list_count = xxlJobGroupDao.pageListCount(start, length, appname, title);
-
+		
 		// package result
 		Map<String, Object> maps = new HashMap<String, Object>();
 		maps.put("recordsTotal", list_count);		// 总记录数
 		maps.put("recordsFiltered", list_count);	// 过滤后的总记录数
 		maps.put("data", list);  					// 分页列表
+
 		return maps;
 	}
 

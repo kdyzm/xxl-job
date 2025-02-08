@@ -10,11 +10,6 @@ public enum EndpointType {
     /**
      * 消息执行
      */
-    TASK_EXECUTE,
-
-    /**
-     * 执行日志
-     */
-    TASK_LOG;
+    TASK_EXECUTE
 
 }

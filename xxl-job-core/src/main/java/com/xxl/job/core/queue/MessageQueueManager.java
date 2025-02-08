@@ -1,9 +1,9 @@
-package com.xxl.job.admin.queue;
+package com.xxl.job.core.queue;
 
 import cn.hutool.core.map.MapUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,14 +18,14 @@ public class MessageQueueManager {
 
     private static final MessageQueueManager MESSAGE_QUEUE_MANAGER = new MessageQueueManager();
 
-    private Map<String, ConcurrentHashMap<Long, LinkedBlockingQueue<Object>>> map = new ConcurrentHashMap<>();
+    private Map<String, ConcurrentHashMap<Serializable, LinkedBlockingQueue<Object>>> map = new ConcurrentHashMap<>();
 
     public static MessageQueueManager getInstance() {
         return MESSAGE_QUEUE_MANAGER;
     }
 
-    public void put(String type, Long key, Object value) {
-        ConcurrentHashMap<Long, LinkedBlockingQueue<Object>> data = map.get(type);
+    public void put(String type, Serializable key, Object value) {
+        ConcurrentHashMap<Serializable, LinkedBlockingQueue<Object>> data = map.get(type);
         if (MapUtil.isEmpty(data)) {
             data = new ConcurrentHashMap<>();
             map.put(type, data);
@@ -46,8 +46,8 @@ public class MessageQueueManager {
     }
 
 
-    public Object take(String type, Long key) {
-        ConcurrentHashMap<Long, LinkedBlockingQueue<Object>> data = map.get(type);
+    public Object take(String type, Serializable key) {
+        ConcurrentHashMap<Serializable, LinkedBlockingQueue<Object>> data = map.get(type);
         if (Objects.isNull(data)) {
             return null;
         }
@@ -66,8 +66,8 @@ public class MessageQueueManager {
         return null;
     }
 
-    public void remove(String type, Long key) {
-        ConcurrentHashMap<Long, LinkedBlockingQueue<Object>> data = map.get(type);
+    public void remove(String type, Serializable key) {
+        ConcurrentHashMap<Serializable, LinkedBlockingQueue<Object>> data = map.get(type);
         if (Objects.isNull(data)) {
             return;
         }

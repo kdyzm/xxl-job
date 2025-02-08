@@ -4,6 +4,7 @@ import cn.kdyzm.json.util.JsonUtils;
 import cn.kdyzm.util.spring.SpringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.xxl.job.admin.handler.callback.TriggerRunCallbackHandler;
 import com.xxl.job.core.biz.AdminBiz;
 import com.xxl.job.core.biz.model.HandleCallbackParam;
 import com.xxl.job.core.biz.websocket.EndpointType;
@@ -46,6 +47,11 @@ public class TaskExecuteEndpoint extends WebSocketServer {
                 });
         String path = req.getPath();
         switch (path) {
+            case "triggerRunCallback":
+                SpringUtils
+                        .getBean(TriggerRunCallbackHandler.class)
+                        .handler(req.getData());
+                break;
             case "callback":
                 List<HandleCallbackParam> callbackParamList = GsonTool.fromJson(
                         req.getData().toString(),

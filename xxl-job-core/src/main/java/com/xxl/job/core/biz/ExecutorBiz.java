@@ -21,7 +21,7 @@ public interface ExecutorBiz {
      * @param idleBeatParam
      * @return
      */
-    public ReturnT<WebSocketServer> idleBeat(WebSocketServer webSocketServer,IdleBeatParam idleBeatParam);
+    public ReturnT<WebSocketServer> idleBeat(WebSocketServer webSocketServer, IdleBeatParam idleBeatParam);
 
     /**
      * run
@@ -37,7 +37,7 @@ public interface ExecutorBiz {
      * @param killParam
      * @return
      */
-    public ReturnT<String> kill(WebSocketServer webSocketServer,KillParam killParam);
+    public ReturnT<String> kill(WebSocketServer webSocketServer, KillParam killParam);
 
     /**
      * log
@@ -45,6 +45,6 @@ public interface ExecutorBiz {
      * @param logParam
      * @return
      */
-    public ReturnT<LogResult> log(WebSocketServer webSocketServer,LogParam logParam);
+    public ReturnT<LogResult> log(WebSocketServer webSocketServer, LogParam logParam);
 
 }

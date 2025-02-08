@@ -7,7 +7,7 @@ import com.xxl.job.admin.core.model.XxlJobLog;
 import com.xxl.job.admin.dao.XxlJobGroupDao;
 import com.xxl.job.admin.dao.XxlJobInfoDao;
 import com.xxl.job.admin.dao.XxlJobLogDao;
-import com.xxl.job.admin.queue.MessageQueueManager;
+import com.xxl.job.core.queue.MessageQueueManager;
 import com.xxl.job.core.biz.model.LogResult;
 import com.xxl.job.core.biz.model.ReturnT;
 import lombok.AllArgsConstructor;
@@ -48,6 +48,5 @@ public class JobLogCallbackHandler implements CallbackHandler<JsonNode> {
         }
         //发送消息队列
         MessageQueueManager.getInstance().put("logCallback", logId, logResult);
-
     }
 }

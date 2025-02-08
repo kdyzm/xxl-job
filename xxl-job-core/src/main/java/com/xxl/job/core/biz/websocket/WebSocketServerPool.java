@@ -140,6 +140,10 @@ public final class WebSocketServerPool {
 
     }
 
+    public Map<EndpointType, List<WebSocketServer>> getAllWebSocketServersByAppName(String appName){
+        return userEndpointMap.get(appName);
+    }
+    
     public Optional<List<WebSocketServer>> getBySystemAndReceiverId(String appName,
                                                                     EndpointType endpointType) {
         Map<EndpointType, List<WebSocketServer>> endpointTypeListMap

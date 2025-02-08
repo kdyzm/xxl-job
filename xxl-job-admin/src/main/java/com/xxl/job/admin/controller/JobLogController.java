@@ -11,7 +11,7 @@ import com.xxl.job.admin.core.util.I18nUtil;
 import com.xxl.job.admin.dao.XxlJobGroupDao;
 import com.xxl.job.admin.dao.XxlJobInfoDao;
 import com.xxl.job.admin.dao.XxlJobLogDao;
-import com.xxl.job.admin.queue.MessageQueueManager;
+import com.xxl.job.core.queue.MessageQueueManager;
 import com.xxl.job.core.biz.ExecutorBiz;
 import com.xxl.job.core.biz.model.KillParam;
 import com.xxl.job.core.biz.model.LogParam;
@@ -192,7 +192,9 @@ public class JobLogController {
                     .orElse(null);
             WebSocketServer webSocketServer = null;
             if (CollUtil.isNotEmpty(webSocketServers)) {
-                webSocketServer = webSocketServers.stream().filter(item -> item.getClientIp().equals(executorAddress)).findAny().orElse(null);
+                webSocketServer = webSocketServers.stream()
+                        .filter(item -> item.getClientIp().equals(executorAddress))
+                        .findAny().orElse(null);
             }
             if (Objects.isNull(webSocketServer)) {
                 return new ReturnT<>(ReturnT.FAIL_CODE, "未找到有效的websocket连接");
