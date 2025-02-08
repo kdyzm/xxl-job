@@ -209,7 +209,7 @@ public class JobLogController {
             MessageQueueManager instance = MessageQueueManager.getInstance();
             Object callBackResult;
             while (Objects.isNull(callBackResult = instance.take("logCallback", logId))) {
-                TimeUnit.SECONDS.sleep(1);
+                TimeUnit.MILLISECONDS.sleep(100);
             }
             logger.info("接收成功消息，即将返回");
             ReturnT<LogResult> returnResult = (ReturnT<LogResult>)callBackResult;
