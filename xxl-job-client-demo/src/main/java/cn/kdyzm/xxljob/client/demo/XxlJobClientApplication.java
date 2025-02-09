@@ -8,9 +8,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @date 2023/12/7
  */
 @SpringBootApplication
-public class Application {
+public class XxlJobClientApplication {
 
     public static void main(String[] args) {
-        ApplicationStarter.run(Application.class, args);
+        ApplicationStarter.run(XxlJobClientApplication.class, args);
     }
 }
