@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>cn.kdyzm</groupId>
-        <artifactId>kdyzm-bom</artifactId>
-        <version>0.0.4</version>
+        <groupId>com.xuxueli</groupId>
+        <artifactId>xxl-job</artifactId>
+        <version>2.5.0</version>
     </parent>
 
     <artifactId>xxl-job-client-demo</artifactId>
@@ -20,6 +21,17 @@
     <description>xxl-job客户端演示项目</description>
     <url>https://blog.kdyzm.cn</url>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>cn.kdyzm</groupId>
+                <artifactId>kdyzm-bom</artifactId>
+                <version>0.0.4</version>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>cn.kdyzm</groupId>
@@ -29,8 +41,8 @@
         <dependency>
             <groupId>cn.kdyzm</groupId>
             <artifactId>xxljob-websocket-spring-boot-starter</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
-    
+
 </project>
