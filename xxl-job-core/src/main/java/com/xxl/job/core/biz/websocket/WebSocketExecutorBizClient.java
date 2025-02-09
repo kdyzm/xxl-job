@@ -43,11 +43,7 @@ public class WebSocketExecutorBizClient implements ExecutorBiz {
         MessageQueueManager instance = MessageQueueManager.getInstance();
         Object callBackResult;
         while (Objects.isNull(callBackResult = instance.take("triggerRunCallback", triggerParam.getJobId()))) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(100);
-            } catch (InterruptedException e) {
-                log.error("", e);
-            }
+            Thread.yield();
         }
         ReturnT<Integer> returnResult = (ReturnT<Integer>) callBackResult;
         ReturnT<String> returnReulst1 = new ReturnT<>(
