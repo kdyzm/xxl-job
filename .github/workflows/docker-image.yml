@@ -24,6 +24,6 @@ jobs:
           docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }} registry.cn-hangzhou.aliyuncs.com
           cd xxl-job-admin
           # 使用Dockerfile构建镜像
-          docker build . --file Dockerfile --tag registry.cn-hangzhou.aliyuncs.com/kdyzm/xxl-job-admin:2.4.2
+          docker build . --file Dockerfile --tag registry.cn-hangzhou.aliyuncs.com/kdyzm/xxl-job-websocket-admin:1.0.1
           # 推送镜像到镜像仓库
-          docker push registry.cn-hangzhou.aliyuncs.com/kdyzm/xxl-job-admin:2.4.2
+          docker push registry.cn-hangzhou.aliyuncs.com/kdyzm/xxl-job-websocket-admin:1.0.1
