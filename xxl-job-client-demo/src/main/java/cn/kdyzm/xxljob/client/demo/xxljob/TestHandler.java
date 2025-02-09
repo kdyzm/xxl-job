@@ -17,6 +17,6 @@ public class TestHandler {
     @XxlJob("test")
     public void handle(String args) {
         XxlJobHelper.log("处理参数：{}", args);
-        XxlJobHelper.handleFail("处理失败，未知异常");
+        XxlJobHelper.handleSuccess("处理成功");
     }
 }
