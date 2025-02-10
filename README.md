@@ -42,3 +42,37 @@
 |[2.4.1](https://github.com/kdyzm/xxl-job/releases/tag/2.4.1)|添加xxl-job特殊前缀，防止接口路径和主项目冲突|
 |[2.4.2](https://github.com/kdyzm/xxl-job/releases/tag/2.4.2)|xxl-job-admin执行日志显示执行器和执行任务|
 |当前master|解决jobParam参数丢失问题；执行日志和任务管理添加执行器筛选功能，解决执行器过多不方便筛选的问题|
+
+
+
+本项目作为单独的xxl-job-admin使用，xxl-job-core已经封装成spring-boot-starter，并上传到了maven中央仓库，GAV坐标如下
+
+``` xml
+<dependency>
+    <groupId>cn.kdyzm</groupId>
+    <artifactId>xxljob-spring-boot-starter</artifactId>
+    <version>1.0.2</version>
+</dependency>
+```
+
+源码地址：https://gitee.com/kdyzm/xxljob-spring-boot-starter
+
+客户端引入该starter之后需要配置好配置文件
+
+``` yaml
+xxl:
+  job:
+    admin:
+      addresses: http://127.0.0.1:8080/xxl-job-admin
+    accessToken: default_token
+    executor:
+      title: xxl-job-client-demo
+      appname: xxl-job-client-demo
+      logpath: ./logs
+      logretentiondays: 30
+      port: 8080
+```
+
+
+
+另外，还有websocket版本的xxl-job-admin，请切换websocket分支，改造文档：[爆改xxl-job：websocket版本的改造方案](https://blog.kdyzm.cn/post/285)
