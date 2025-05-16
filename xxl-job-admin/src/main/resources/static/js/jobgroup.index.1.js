@@ -33,7 +33,11 @@ $(function() {
 			{
 				"data": 'title',
 				"visible" : true,
-				"width":'30%'
+				"width":'30%',
+				"render": function(data, type, row) {
+					return "<a href='/xxl-job-admin/jobinfo?jobGroup=" + row.id + "'>" + row.title + "</a>";
+				}
+				
 			},
 			{
 				"data": 'addressType',
