@@ -68,6 +68,19 @@
 	            	<button class="btn btn-block btn-success add" type="button">${I18n.jobinfo_field_add}</button>
 	            </div>
           	</div>
+
+            <!-- 批量操作按钮组 -->
+            <div class="row" id="batchOpeBtns" style="padding-top: 10px;padding-bottom: 10px;display: none">
+                <div class="col-xs-1">
+                    <button class="btn btn-info" id="batchStopBtn">批量停止</button>
+                </div>
+                <div class="col-xs-1">
+                    <button class="btn btn-info" id="batchStartBtn">批量启动</button>
+                </div>
+                <div class="col-xs-1">
+                    <button class="btn btn-info" id="batchDelBtn">批量删除</button>
+                </div>
+            </div>
 	    	
 			<div class="row">
 				<div class="col-xs-12">
@@ -79,7 +92,8 @@
 			              	<table id="job_list" class="table table-bordered table-striped" width="100%" >
 				                <thead>
 					            	<tr>
-					            		<th name="id" >${I18n.jobinfo_field_id}</th>
+<#--					            		<th name="id" >${I18n.jobinfo_field_id}</th>-->
+                                        <th name="selectCheck"><input type="checkbox" id="checkBoxAll"/></th>
 					                	<th name="jobGroup" >${I18n.jobinfo_field_jobgroup}</th>
 					                  	<th name="jobDesc" >${I18n.jobinfo_field_jobdesc}</th>
                                         <th name="scheduleType" >${I18n.schedule_type}</th>

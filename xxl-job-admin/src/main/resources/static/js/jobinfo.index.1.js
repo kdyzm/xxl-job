@@ -24,12 +24,19 @@ $(function() {
 	    "ordering": false,
 	    //"scrollX": true,	// scroll x，close self-adaption
 	    "columns": [
-	                {
-	                	"data": 'id',
-						"bSortable": false,
-						"visible" : true,
-						"width":'7%'
-					},
+            {
+                "data": null,  // 不绑定特定数据
+                "defaultContent": '',  // 默认内容
+                "bSortable": false,
+                "visible": true,
+                "width": '7%',
+                "orderable": false,
+                "className": 'dt-body-center dt-head-center',
+                "render": function (data, type, row, meta) {
+                    // 创建带有 id 的复选框
+                    return '<input type="checkbox" class="row-checkbox" value="' + row.id + '">';
+                }
+            },
 	                {
 	                	"data": 'jobGroup',
 	                	"visible" : false,
@@ -192,6 +199,222 @@ $(function() {
 
     // table data
     var tableData = {};
+
+    $('#checkBoxAll').on('click', function() {
+        var $allCheckboxes = $('.row-checkbox');
+
+        if ($allCheckboxes.length === 0) return;
+
+        // 计算当前选中状态
+        var allChecked = $allCheckboxes.length === $allCheckboxes.filter(':checked').length;
+        var anyChecked = $allCheckboxes.filter(':checked').length > 0;
+
+        // 决定新状态
+        var newState = !(allChecked);
+
+        // 设置所有复选框状态
+        $allCheckboxes.prop('checked', newState).trigger('change');
+
+        // 更新全选复选框状态
+        $(this).prop('checked', newState);
+        $(this).prop('indeterminate', false);
+    });
+
+    // 行复选框变化时更新全选状态
+    $(document).on('change', '.row-checkbox', function() {
+        updateSelectAllStatus();
+    });
+
+    // 更新全选复选框状态的函数
+    function updateSelectAllStatus() {
+        var $checkAll = $('#checkBoxAll');
+        var $allCheckboxes = $('.row-checkbox');
+
+        if ($allCheckboxes.length === 0) {
+            $checkAll.prop('checked', false);
+            $checkAll.prop('indeterminate', false);
+            return;
+        }
+
+        var checkedCount = $allCheckboxes.filter(':checked').length;
+        var totalCount = $allCheckboxes.length;
+        console.log(
+            checkedCount,totalCount
+        )
+        if(checkedCount>0){
+            $('#batchOpeBtns').show();
+        }else{
+            $('#batchOpeBtns').hide();
+        }
+        // 使用 indeterminate 状态表示部分选中
+        if (checkedCount === 0) {
+            $checkAll.prop('checked', false);
+            $checkAll.prop('indeterminate', false);
+        } else if (checkedCount === totalCount) {
+            $checkAll.prop('checked', true);
+            $checkAll.prop('indeterminate', false);
+        } else {
+            $checkAll.prop('checked', false);
+            $checkAll.prop('indeterminate', true);
+        }
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        $('.row-checkbox:checked').each(function() {
+            var id = $(this).val();
+            if (id && id !== '') {
+                ids.push(id);
+            }
+        });
+        return ids;
+    }
+    // ==================== 批量停止按钮 ====================
+    $('#batchStopBtn').on('click', function(e) {
+        e.preventDefault();
+
+        var selectedIds = getSelectedIds();
+        console.log(JSON.stringify(selectedIds));
+        if (selectedIds.length === 0) {
+            alert('请至少选择一项进行操作');
+            return;
+        }
+
+        if (!confirm(`确定要停止选中的 ${selectedIds.length} 项吗？`)) {
+            return;
+        }
+
+        // 显示加载状态
+        var $btn = $(this);
+        var originalText = $btn.text();
+        $btn.prop('disabled', true).text('处理中...');
+
+        console.log(base_url)
+        // 发送POST请求
+        $.ajax({
+            url: base_url + '/jobinfo/batchPause',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(selectedIds),
+            headers: {
+                // 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') // 如果使用CSRF保护
+            },
+            success: function(response) {
+                if (response.code === 200) {
+                    layer.msg(`成功停止 ${selectedIds.length} 项`);
+                    // 可选：更新UI或刷新页面
+                    jobTable.fnDraw();
+                    $('#checkBoxAll').prop('checked', false).prop('indeterminate', false);
+                } else {
+                    alert('操作失败: ' + (response.message || '未知错误'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('批量停止失败:', error);
+                alert('操作失败，请稍后重试');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+
+    // ==================== 批量启动按钮 ====================
+    $('#batchStartBtn').on('click', function(e) {
+        e.preventDefault();
+
+        var selectedIds = getSelectedIds();
+        if (selectedIds.length === 0) {
+            alert('请至少选择一项进行操作');
+            return;
+        }
+
+        if (!confirm(`确定要启动选中的 ${selectedIds.length} 项吗？`)) {
+            return;
+        }
+
+        // 显示加载状态
+        var $btn = $(this);
+        var originalText = $btn.text();
+        $btn.prop('disabled', true).text('处理中...');
+
+        // 发送POST请求
+        $.ajax({
+            url: base_url + '/jobinfo/batchStart', // 替换为你的后端接口
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(selectedIds),
+            headers: {
+                // 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.code === 200) {
+                    layer.msg(`成功启动 ${selectedIds.length} 项`);
+                    jobTable.fnDraw();
+                    $('#checkBoxAll').prop('checked', false).prop('indeterminate', false);
+                } else {
+                    alert('操作失败: ' + (response.message || '未知错误'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('批量启动失败:', error);
+                alert('操作失败，请稍后重试');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+
+    // ==================== 批量删除按钮 ====================
+    $('#batchDelBtn').on('click', function(e) {
+        e.preventDefault();
+
+        var selectedIds = getSelectedIds();
+        if (selectedIds.length === 0) {
+            alert('请至少选择一项进行操作');
+            return;
+        }
+
+        if (!confirm(`确定要删除选中的 ${selectedIds.length} 项吗？此操作不可恢复！`)) {
+            return;
+        }
+
+        // 显示加载状态
+        var $btn = $(this);
+        var originalText = $btn.text();
+        $btn.prop('disabled', true).text('删除中...');
+
+        // 发送POST请求
+        $.ajax({
+            url: base_url + '/jobinfo/batchRemove', // 替换为你的后端接口
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(selectedIds),
+            headers: {
+                // 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.code === 200) {
+                    layer.msg(`成功删除 ${selectedIds.length} 项`);
+                    jobTable.fnDraw();
+                    $('#checkBoxAll').prop('checked', false).prop('indeterminate', false);
+                } else {
+                    alert('删除失败: ' + (response.message || '未知错误'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('批量删除失败:', error);
+                alert('删除失败，请稍后重试');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).text(originalText);
+
+            }
+        });
+    });
+
+
 
 	// search btn
 	$('#searchBtn').on('click', function(){

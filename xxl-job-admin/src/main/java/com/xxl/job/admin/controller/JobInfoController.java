@@ -23,9 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -124,18 +122,36 @@ public class JobInfoController {
 	public ReturnT<String> remove(int id) {
 		return xxlJobService.remove(id);
 	}
+
+    @RequestMapping("/batchRemove")
+    @ResponseBody
+    public ReturnT<String> batchRemove(@RequestBody List<Integer> ids) {
+        return xxlJobService.batchRemove(ids);
+    }
 	
 	@RequestMapping("/stop")
 	@ResponseBody
 	public ReturnT<String> pause(int id) {
 		return xxlJobService.stop(id);
 	}
+
+    @PostMapping("/batchPause")
+    @ResponseBody
+    public ReturnT<String> batchPause(@RequestBody List<Integer> ids){
+        return xxlJobService.batchStop(ids);
+    }
 	
 	@RequestMapping("/start")
 	@ResponseBody
 	public ReturnT<String> start(int id) {
 		return xxlJobService.start(id);
 	}
+
+    @PostMapping("/batchStart")
+    @ResponseBody
+    public ReturnT<String> batchStart(@RequestBody List<Integer> ids){
+        return xxlJobService.batchStart(ids);
+    }
 	
 	@RequestMapping("/trigger")
 	@ResponseBody
