@@ -83,6 +83,16 @@ public class JobTriggerPoolHelper {
             triggerPool_ = slowTriggerPool;
         }
 
+        String poolName = (triggerPool_ == fastTriggerPool) ? "fastTriggerPool" : "slowTriggerPool";
+        int poolQueueSize = triggerPool_.getQueue().size();
+        int poolActiveCount = triggerPool_.getActiveCount();
+        int poolCorePoolSize = triggerPool_.getCorePoolSize();
+        int poolLargestPoolSize = triggerPool_.getLargestPoolSize();
+
+        logger.info(">>>>>>>>>>>> xxl-job addTrigger to pool, jobId={}, triggerType={}, pool={}, queueSize={}, activeCount={}, corePoolSize={}, largestPoolSize={}, jobTimeoutCount={}",
+                jobId, triggerType, poolName, poolQueueSize, poolActiveCount, poolCorePoolSize, poolLargestPoolSize,
+                (jobTimeoutCount != null ? jobTimeoutCount.get() : 0));
+
         // trigger
         triggerPool_.execute(new Runnable() {
             @Override
@@ -94,7 +104,7 @@ public class JobTriggerPoolHelper {
                     // do trigger
                     XxlJobTrigger.trigger(jobId, triggerType, failRetryCount, executorShardingParam, executorParam, addressList);
                 } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
+                    logger.error(">>>>>>>>>>> xxl-job trigger exception, jobId={}, triggerType={}", jobId, triggerType, e);
                 } finally {
 
                     // check timeout-count-map
@@ -111,6 +121,7 @@ public class JobTriggerPoolHelper {
                         if (timeoutCount != null) {
                             timeoutCount.incrementAndGet();
                         }
+                        logger.warn(">>>>>>>>>>>> xxl-job trigger slow, jobId={}, cost={}ms, triggerType={}", jobId, cost, triggerType);
                     }
 
                 }

@@ -78,21 +78,29 @@ public class JobScheduleHelper {
                         // 1、pre read
                         long nowTime = System.currentTimeMillis();
                         List<XxlJobInfo> scheduleList = XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().scheduleJobQuery(nowTime + PRE_READ_MS, preReadCount);
+
+                        int misfireCount = 0, directTriggerCount = 0, ringPushCount = 0;
+
                         if (scheduleList!=null && scheduleList.size()>0) {
+                            logger.info(">>>>>>>>>>> xxl-job schedule loop, found {} jobs, nowTime={}, preReadCount={}", scheduleList.size(), new Date(nowTime), preReadCount);
                             // 2、push time-ring
                             for (XxlJobInfo jobInfo: scheduleList) {
 
                                 // time-ring jump
                                 if (nowTime > jobInfo.getTriggerNextTime() + PRE_READ_MS) {
                                     // 2.1、trigger-expire > 5s：pass && make next-trigger-time
-                                    logger.warn(">>>>>>>>>>> xxl-job, schedule misfire, jobId = " + jobInfo.getId());
+                                    misfireCount++;
+                                    logger.warn(">>>>>>>>>>> xxl-job schedule MISFIRE, jobId={}, jobDesc={}, triggerNextTime={}, misfireStrategy={}",
+                                            jobInfo.getId(), jobInfo.getJobDesc(), new Date(jobInfo.getTriggerNextTime()), jobInfo.getMisfireStrategy());
 
                                     // 1、misfire match
                                     MisfireStrategyEnum misfireStrategyEnum = MisfireStrategyEnum.match(jobInfo.getMisfireStrategy(), MisfireStrategyEnum.DO_NOTHING);
                                     if (MisfireStrategyEnum.FIRE_ONCE_NOW == misfireStrategyEnum) {
                                         // FIRE_ONCE_NOW 》 trigger
+                                        logger.info(">>>>>>>>>>> xxl-job schedule misfire FIRE_ONCE_NOW, jobId={}, jobDesc={}", jobInfo.getId(), jobInfo.getJobDesc());
                                         JobTriggerPoolHelper.trigger(jobInfo.getId(), TriggerTypeEnum.MISFIRE, -1, null, null, null);
-                                        logger.debug(">>>>>>>>>>> xxl-job, schedule push trigger : jobId = " + jobInfo.getId() );
+                                    } else {
+                                        logger.info(">>>>>>>>>>> xxl-job schedule misfire DO_NOTHING, jobId={}, jobDesc={}", jobInfo.getId(), jobInfo.getJobDesc());
                                     }
 
                                     // 2、fresh next
@@ -100,10 +108,11 @@ public class JobScheduleHelper {
 
                                 } else if (nowTime > jobInfo.getTriggerNextTime()) {
                                     // 2.2、trigger-expire < 5s：direct-trigger && make next-trigger-time
+                                    directTriggerCount++;
 
-                                    // 1、trigger
+                                    logger.info(">>>>>>>>>>> xxl-job schedule DIRECT trigger, jobId={}, jobDesc={}, executorHandler={}, triggerNextTime={}",
+                                            jobInfo.getId(), jobInfo.getJobDesc(), jobInfo.getExecutorHandler(), new Date(jobInfo.getTriggerNextTime()));
                                     JobTriggerPoolHelper.trigger(jobInfo.getId(), TriggerTypeEnum.CRON, -1, null, null, null);
-                                    logger.debug(">>>>>>>>>>> xxl-job, schedule push trigger : jobId = " + jobInfo.getId() );
 
                                     // 2、fresh next
                                     refreshNextValidTime(jobInfo, new Date());
@@ -115,7 +124,10 @@ public class JobScheduleHelper {
                                         int ringSecond = (int)((jobInfo.getTriggerNextTime()/1000)%60);
 
                                         // 2、push time ring
+                                        logger.info(">>>>>>>>>>> xxl-job schedule push RING after direct, jobId={}, ringSecond={}, nextTriggerNextTime={}",
+                                                jobInfo.getId(), ringSecond, new Date(jobInfo.getTriggerNextTime()));
                                         pushTimeRing(ringSecond, jobInfo.getId());
+                                        ringPushCount++;
 
                                         // 3、fresh next
                                         refreshNextValidTime(jobInfo, new Date(jobInfo.getTriggerNextTime()));
@@ -124,11 +136,14 @@ public class JobScheduleHelper {
 
                                 } else {
                                     // 2.3、trigger-pre-read：time-ring trigger && make next-trigger-time
+                                    ringPushCount++;
 
                                     // 1、make ring second
                                     int ringSecond = (int)((jobInfo.getTriggerNextTime()/1000)%60);
 
                                     // 2、push time ring
+                                    logger.info(">>>>>>>>>>> xxl-job schedule push RING (pre-read), jobId={}, jobDesc={}, executorHandler={}, ringSecond={}, triggerNextTime={}",
+                                            jobInfo.getId(), jobInfo.getJobDesc(), jobInfo.getExecutorHandler(), ringSecond, new Date(jobInfo.getTriggerNextTime()));
                                     pushTimeRing(ringSecond, jobInfo.getId());
 
                                     // 3、fresh next
@@ -136,6 +151,11 @@ public class JobScheduleHelper {
 
                                 }
 
+                            }
+
+                            if (scheduleList.size() > 0) {
+                                logger.info(">>>>>>>>>>> xxl-job schedule loop summary: total={}, misfire={}, directTrigger={}, ringPush={}",
+                                        scheduleList.size(), misfireCount, directTriggerCount, ringPushCount);
                             }
 
                             // 3、update trigger info
@@ -245,15 +265,15 @@ public class JobScheduleHelper {
                         }
 
                         // ring trigger
-                        logger.debug(">>>>>>>>>>> xxl-job, time-ring beat : " + nowSecond + " = " + Arrays.asList(ringItemData) );
                         if (ringItemData.size() > 0) {
-                            // do trigger
+                            logger.info(">>>>>>>>>>> xxl-job ring beat nowSecond={}, triggering {} jobs: {}",
+                                    nowSecond, ringItemData.size(), ringItemData);
                             for (int jobId: ringItemData) {
-                                // do trigger
                                 JobTriggerPoolHelper.trigger(jobId, TriggerTypeEnum.CRON, -1, null, null, null);
                             }
-                            // clear
                             ringItemData.clear();
+                        } else {
+                            logger.debug(">>>>>>>>>>> xxl-job ring beat nowSecond={}, no jobs to trigger", nowSecond);
                         }
                     } catch (Exception e) {
                         if (!ringThreadToStop) {
@@ -278,8 +298,8 @@ public class JobScheduleHelper {
             jobInfo.setTriggerStatus(0);
             jobInfo.setTriggerLastTime(0);
             jobInfo.setTriggerNextTime(0);
-            logger.warn(">>>>>>>>>>> xxl-job, refreshNextValidTime fail for job: jobId={}, scheduleType={}, scheduleConf={}",
-                    jobInfo.getId(), jobInfo.getScheduleType(), jobInfo.getScheduleConf());
+            logger.warn(">>>>>>>>>>> xxl-job, refreshNextValidTime fail for job: jobId={}, jobDesc={}, scheduleType={}, scheduleConf={}",
+                    jobInfo.getId(), jobInfo.getJobDesc(), jobInfo.getScheduleType(), jobInfo.getScheduleConf());
         }
     }
 

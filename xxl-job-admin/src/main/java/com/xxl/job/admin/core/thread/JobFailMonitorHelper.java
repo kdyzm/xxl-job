@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class JobFailMonitorHelper {
 	private static Logger logger = LoggerFactory.getLogger(JobFailMonitorHelper.class);
-	
+
 	private static JobFailMonitorHelper instance = new JobFailMonitorHelper();
 	public static JobFailMonitorHelper getInstance(){
 		return instance;
@@ -34,34 +34,45 @@ public class JobFailMonitorHelper {
 			// monitor
 			while (!toStop) {
 				try {
-//					logger.info("开始跑批执行任务失败调度");
 					List<Long> failLogIds = XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().findFailJobLogIds(1000);
 					if (failLogIds!=null && !failLogIds.isEmpty()) {
+						logger.info(">>>>>>>>>>>> xxl-job fail monitor found {} failed job logs", failLogIds.size());
 						for (long failLogId: failLogIds) {
 
 							// lock log
 							int lockRet = XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().updateAlarmStatus(failLogId, 0, -1);
 							if (lockRet < 1) {
+								logger.debug(">>>>>>>>>>>> xxl-job fail monitor lock FAIL, logId={}, already locked or processed", failLogId);
 								continue;
 							}
 							XxlJobLog log = XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().load(failLogId);
 							XxlJobInfo info = XxlJobAdminConfig.getAdminConfig().getXxlJobInfoDao().loadById(log.getJobId());
 
+							logger.info(">>>>>>>>>>>> xxl-job fail monitor processing, logId={}, jobId={}, triggerCode={}, handleCode={}, executorFailRetryCount={}",
+									failLogId, log.getJobId(), log.getTriggerCode(), log.getHandleCode(), log.getExecutorFailRetryCount());
+
 							// 1、fail retry monitor
 							if (log.getExecutorFailRetryCount() > 0) {
+								logger.info(">>>>>>>>>>>> xxl-job fail monitor RETRY, logId={}, jobId={}, retryCount={}",
+										failLogId, log.getJobId(), log.getExecutorFailRetryCount());
 								JobTriggerPoolHelper.trigger(log.getJobId(), TriggerTypeEnum.RETRY, (log.getExecutorFailRetryCount()-1), log.getExecutorShardingParam(), log.getExecutorParam(), null);
 								String retryMsg = "<br><br><span style=\"color:#F39C12;\" > >>>>>>>>>>>"+ I18nUtil.getString("jobconf_trigger_type_retry") +"<<<<<<<<<<< </span><br>";
 								log.setTriggerMsg(log.getTriggerMsg() + retryMsg);
 								XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().updateTriggerInfo(log);
+								logger.info(">>>>>>>>>>>> xxl-job fail monitor retry triggered, logId={}, updated triggerMsg with retry marker", failLogId);
 							}
 
 							// 2、fail alarm monitor
 							int newAlarmStatus = 0;		// 告警状态：0-默认、-1=锁定状态、1-无需告警、2-告警成功、3-告警失败
 							if (info!=null && info.getAlarmEmail()!=null && info.getAlarmEmail().trim().length()>0) {
+								logger.info(">>>>>>>>>>>> xxl-job fail monitor sending ALARM, logId={}, jobId={}, alarmEmail={}",
+										failLogId, log.getJobId(), info.getAlarmEmail());
 								boolean alarmResult = XxlJobAdminConfig.getAdminConfig().getJobAlarmer().alarm(info, log);
 								newAlarmStatus = alarmResult?2:3;
+								logger.info(">>>>>>>>>>>> xxl-job fail monitor alarm result: {}, newAlarmStatus={}", alarmResult, newAlarmStatus);
 							} else {
 								newAlarmStatus = 1;
+								logger.debug(">>>>>>>>>>>> xxl-job fail monitor no alarm needed, logId={}, alarmEmail={}", failLogId, info!=null ? info.getAlarmEmail() : "null");
 							}
 
 							XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().updateAlarmStatus(failLogId, -1, newAlarmStatus);
@@ -74,17 +85,17 @@ public class JobFailMonitorHelper {
 					}
 				}
 
-try {
-TimeUnit.SECONDS.sleep(10);
-} catch (Exception e) {
-if (!toStop) {
-logger.error(e.getMessage(), e);
-}
-}
+	try {
+	TimeUnit.SECONDS.sleep(10);
+	} catch (Exception e) {
+	if (!toStop) {
+	logger.error(e.getMessage(), e);
+	}
+	}
 
-}
+	}
 
-			logger.info(">>>>>>>>>>> xxl-job, job fail monitor thread stop");
+				logger.info(">>>>>>>>>>> xxl-job, job fail monitor thread stop");
 
 		});
 		monitorThread.setDaemon(true);
