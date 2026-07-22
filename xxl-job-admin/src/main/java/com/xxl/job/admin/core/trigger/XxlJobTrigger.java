@@ -265,11 +265,26 @@ public class XxlJobTrigger {
             errorSb.append("<br>").append("trigger error：").append(e.getMessage());
             jobLog.setTriggerCode(ReturnT.FAIL_CODE);
             jobLog.setTriggerMsg(errorSb.toString());
+        } catch (Throwable t) {
+            // Error（如 NoClassDefFoundError、StackOverflowError 等）不会被 catch(Exception) 捕获
+            // 导致 updateTriggerInfo 永远不会执行，日志卡在 triggerCode=0
+            logger.error(">>>>>>>>>>>> xxl-job trigger error, processTrigger THROWABLE for jobId={}, jobDesc={}, logId={}",
+                    jobInfo.getId(), jobInfo.getJobDesc(), jobLog.getId(), t);
+            jobLog.setTriggerCode(ReturnT.FAIL_CODE);
+            if (t.getMessage() != null) {
+                jobLog.setTriggerMsg("trigger error：" + t.getMessage());
+            } else {
+                jobLog.setTriggerMsg("trigger error：" + t.getClass().getName());
+            }
+        } finally {
+            // Persist trigger info no matter what (Exception or Error)
+            try {
+                XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().updateTriggerInfo(jobLog);
+                logger.info(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo persisted, logId={}, triggerCode={}", jobLog.getId(), jobLog.getTriggerCode());
+            } catch (Exception e) {
+                logger.error(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo FAILED, logId={}", jobLog.getId(), e);
+            }
         }
-
-        // Persist trigger info no matter what
-        XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().updateTriggerInfo(jobLog);
-        logger.info(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo persisted, logId={}, triggerCode={}", jobLog.getId(), jobLog.getTriggerCode());
 
         long processCost = System.currentTimeMillis() - processStartTime;
         logger.info(">>>>>>>>>>>> xxl-job processTrigger END, logId={}, totalCost={}ms", jobLog.getId(), processCost);
