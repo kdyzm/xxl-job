@@ -145,39 +145,41 @@ public class XxlJobTrigger {
         logger.info(">>>>>>>>>>>> xxl-job processTrigger START, jobId={}, jobDesc={}, executorHandler={}, triggerType={}, blockStrategy={}, routeStrategy={}, shardingParam={}, index={}, total={}, finalFailRetryCount={}",
                 jobInfo.getId(), jobInfo.getJobDesc(), jobInfo.getExecutorHandler(), triggerType, blockStrategy, executorRouteStrategyEnum, shardingParam, index, total, finalFailRetryCount);
 
-        // 1、save log-id
-        XxlJobLog jobLog = new XxlJobLog();
-        jobLog.setJobGroup(jobInfo.getJobGroup());
-        jobLog.setJobId(jobInfo.getId());
-        jobLog.setTriggerTime(new Date());
-        XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().save(jobLog);
-        logger.info(">>>>>>>>>>>> xxl-job processTrigger [1] save log-id SUCCESS, logId={}, jobGroup={}, jobId={}, triggerTime={}",
-                jobLog.getId(), jobLog.getJobGroup(), jobLog.getJobId(), jobLog.getTriggerTime());
-
-        // save trigger info with default values first (ensure log won't be stuck at triggerCode=0)
-        jobLog.setExecutorFailRetryCount(finalFailRetryCount);
-
-        // 2、init trigger-param
-        TriggerParam triggerParam = new TriggerParam();
-        triggerParam.setJobId(jobInfo.getId());
-        triggerParam.setExecutorHandler(jobInfo.getExecutorHandler());
-        triggerParam.setExecutorParams(jobInfo.getExecutorParam());
-        triggerParam.setExecutorBlockStrategy(jobInfo.getExecutorBlockStrategy());
-        triggerParam.setExecutorTimeout(jobInfo.getExecutorTimeout());
-        triggerParam.setLogId(jobLog.getId());
-        triggerParam.setLogDateTime(jobLog.getTriggerTime().getTime());
-        triggerParam.setGlueType(jobInfo.getGlueType());
-        triggerParam.setGlueSource(jobInfo.getGlueSource());
-        triggerParam.setGlueUpdatetime(jobInfo.getGlueUpdatetime().getTime());
-        triggerParam.setBroadcastIndex(index);
-        triggerParam.setBroadcastTotal(total);
-
-        logger.info(">>>>>>>>>>>> xxl-job processTrigger [2] triggerParam prepared, logId={}, executorHandler={}, executorParams={}, executorTimeout={}, glueType={}, broadcastIndex={}, broadcastTotal={}",
-                triggerParam.getLogId(), triggerParam.getExecutorHandler(), triggerParam.getExecutorParams(), triggerParam.getExecutorTimeout(), triggerParam.getGlueType(), triggerParam.getBroadcastIndex(), triggerParam.getBroadcastTotal());
-
         ReturnT<String> triggerResult = null;
+        TriggerParam triggerParam = null;
+        XxlJobLog jobLog = null;
         try {
+            // 1、save log-id
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [1] save log-id START");
+            jobLog = new XxlJobLog();
+            jobLog.setJobGroup(jobInfo.getJobGroup());
+            jobLog.setJobId(jobInfo.getId());
+            jobLog.setTriggerTime(new Date());
+            XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().save(jobLog);
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [1] save log-id SUCCESS, logId={}", jobLog.getId());
+
+            jobLog.setExecutorFailRetryCount(finalFailRetryCount);
+
+            // 2、init trigger-param
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [2] triggerParam init START, logId={}, executorHandler={}", jobLog.getId(), jobInfo.getExecutorHandler());
+            triggerParam = new TriggerParam();
+            triggerParam.setJobId(jobInfo.getId());
+            triggerParam.setExecutorHandler(jobInfo.getExecutorHandler());
+            triggerParam.setExecutorParams(jobInfo.getExecutorParam());
+            triggerParam.setExecutorBlockStrategy(jobInfo.getExecutorBlockStrategy());
+            triggerParam.setExecutorTimeout(jobInfo.getExecutorTimeout());
+            triggerParam.setLogId(jobLog.getId());
+            triggerParam.setLogDateTime(jobLog.getTriggerTime().getTime());
+            triggerParam.setGlueType(jobInfo.getGlueType());
+            triggerParam.setGlueSource(jobInfo.getGlueSource());
+            triggerParam.setGlueUpdatetime(jobInfo.getGlueUpdatetime().getTime());
+            triggerParam.setBroadcastIndex(index);
+            triggerParam.setBroadcastTotal(total);
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [2] triggerParam init SUCCESS, logId={}, executorHandler={}, executorTimeout={}, glueType={}",
+                    triggerParam.getLogId(), triggerParam.getExecutorHandler(), triggerParam.getExecutorTimeout(), triggerParam.getGlueType());
+
             // 3、init address
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [3] route START, logId={}", jobLog.getId());
             String address = null;
             ReturnT<String> routeAddressResult = null;
             if (group != null && group.getRegistryList()!=null && !group.getRegistryList().isEmpty()) {
@@ -211,23 +213,22 @@ public class XxlJobTrigger {
                 }
                 routeAddressResult = new ReturnT<String>(ReturnT.FAIL_CODE, I18nUtil.getString("jobconf_trigger_address_empty"));
             }
-
-            logger.info(">>>>>>>>>>>> xxl-job processTrigger [3] address resolved: address={}", address);
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [3] route COMPLETE, address={}, logId={}", address, jobLog.getId());
 
             // 4、trigger remote executor
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [4] runExecutor START, logId={}, address={}, executorHandler={}", jobLog.getId(), address, jobInfo.getExecutorHandler());
             if (address != null) {
-                logger.info(">>>>>>>>>>>> xxl-job processTrigger [4] calling runExecutor, address={}, timeout={}s", address, triggerParam.getExecutorTimeout());
                 long rpcStartTime = System.currentTimeMillis();
                 triggerResult = runExecutor(triggerParam, address);
                 long rpcCost = System.currentTimeMillis() - rpcStartTime;
-                logger.info(">>>>>>>>>>>> xxl-job processTrigger [4] runExecutor complete, code={}, msg={}, cost={}ms",
-                        triggerResult.getCode(), triggerResult.getMsg(), rpcCost);
+                logger.info(">>>>>>>>>>>> xxl-job processTrigger [4] runExecutor COMPLETE, logId={}, code={}, cost={}ms", jobLog.getId(), triggerResult.getCode(), rpcCost);
             } else {
                 logger.warn(">>>>>>>>>>>> xxl-job processTrigger [4] address is null, cannot call executor, marking as FAIL");
                 triggerResult = new ReturnT<String>(ReturnT.FAIL_CODE, null);
             }
 
             // 5、collection trigger info
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [5] build triggerMsg START, logId={}", jobLog.getId());
             StringBuffer triggerMsgSb = new StringBuffer();
             triggerMsgSb.append(I18nUtil.getString("jobconf_trigger_type")).append("：").append(triggerType.getTitle());
             triggerMsgSb.append("<br>").append(I18nUtil.getString("jobconf_trigger_admin_adress")).append("：").append(IpUtil.getIp());
@@ -244,32 +245,27 @@ public class XxlJobTrigger {
 
             triggerMsgSb.append("<br><br><span style=\"color:#00c0ef;\" > >>>>>>>>>>>"+ I18nUtil.getString("jobconf_trigger_run") +"<<<<<<<<<<< </span><br>")
                     .append((routeAddressResult!=null&&routeAddressResult.getMsg()!=null)?routeAddressResult.getMsg()+"<br><br>":"").append(triggerResult.getMsg()!=null?triggerResult.getMsg():"");
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [5] build triggerMsg COMPLETE, logId={}", jobLog.getId());
 
             // 6、save log trigger-info
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [6] set trigger fields START, logId={}, triggerCode={}", jobLog.getId(), triggerResult.getCode());
             jobLog.setExecutorAddress(address);
             jobLog.setExecutorHandler(jobInfo.getExecutorHandler());
             jobLog.setExecutorParam(jobInfo.getExecutorParam());
             jobLog.setExecutorShardingParam(shardingParam);
             jobLog.setTriggerCode(triggerResult.getCode());
             jobLog.setTriggerMsg(triggerMsgSb.toString());
-
-            logger.info(">>>>>>>>>>>> xxl-job processTrigger [6] trigger result, address={}, triggerCode={}, shardingParam={}",
-                    address, triggerResult.getCode(), shardingParam);
+            logger.info(">>>>>>>>>>>> xxl-job processTrigger [6] set trigger fields COMPLETE, logId={}, triggerCode={}, address={}", jobLog.getId(), triggerResult.getCode(), address);
 
         } catch (Exception e) {
-            logger.error(">>>>>>>>>>>> xxl-job trigger error, processTrigger EXCEPTION for jobId={}, jobDesc={}, logId={}",
-                    jobInfo.getId(), jobInfo.getJobDesc(), jobLog.getId(), e);
-            // Ensure the log record is marked as failed, not stuck at triggerCode=0
+            logger.error(">>>>>>>>>>>> xxl-job trigger error, processTrigger EXCEPTION for jobId={}, logId={}", jobInfo.getId(), jobLog != null ? jobLog.getId() : "null", e);
             StringBuffer errorSb = new StringBuffer();
             errorSb.append(I18nUtil.getString("jobconf_trigger_type")).append("：").append(triggerType.getTitle());
             errorSb.append("<br>").append("trigger error：").append(e.getMessage());
             jobLog.setTriggerCode(ReturnT.FAIL_CODE);
             jobLog.setTriggerMsg(errorSb.toString());
         } catch (Throwable t) {
-            // Error（如 NoClassDefFoundError、StackOverflowError 等）不会被 catch(Exception) 捕获
-            // 导致 updateTriggerInfo 永远不会执行，日志卡在 triggerCode=0
-            logger.error(">>>>>>>>>>>> xxl-job trigger error, processTrigger THROWABLE for jobId={}, jobDesc={}, logId={}",
-                    jobInfo.getId(), jobInfo.getJobDesc(), jobLog.getId(), t);
+            logger.error(">>>>>>>>>>>> xxl-job trigger error, processTrigger THROWABLE for jobId={}, logId={}", jobInfo.getId(), jobLog != null ? jobLog.getId() : "null", t);
             jobLog.setTriggerCode(ReturnT.FAIL_CODE);
             if (t.getMessage() != null) {
                 jobLog.setTriggerMsg("trigger error：" + t.getMessage());
@@ -278,16 +274,21 @@ public class XxlJobTrigger {
             }
         } finally {
             // Persist trigger info no matter what (Exception or Error)
-            try {
-                XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().updateTriggerInfo(jobLog);
-                logger.info(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo persisted, logId={}, triggerCode={}", jobLog.getId(), jobLog.getTriggerCode());
-            } catch (Exception e) {
-                logger.error(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo FAILED, logId={}", jobLog.getId(), e);
+            if (jobLog != null && jobLog.getId() > 0) {
+                try {
+                    logger.info(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo START, logId={}, triggerCode={}", jobLog.getId(), jobLog.getTriggerCode());
+                    XxlJobAdminConfig.getAdminConfig().getXxlJobLogDao().updateTriggerInfo(jobLog);
+                    logger.info(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo SUCCESS, logId={}, triggerCode={}", jobLog.getId(), jobLog.getTriggerCode());
+                } catch (Throwable t) {
+                    logger.error(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo FAILED, logId={}, throwableType={}", jobLog.getId(), t.getClass().getName(), t);
+                }
+            } else {
+                logger.error(">>>>>>>>>>>> xxl-job processTrigger [6] updateTriggerInfo SKIPPED, jobLog is null or id=0");
             }
         }
 
         long processCost = System.currentTimeMillis() - processStartTime;
-        logger.info(">>>>>>>>>>>> xxl-job processTrigger END, logId={}, totalCost={}ms", jobLog.getId(), processCost);
+        logger.info(">>>>>>>>>>>> xxl-job processTrigger END, logId={}, totalCost={}ms", jobLog != null ? jobLog.getId() : "null", processCost);
     }
 
     /**
