@@ -7,3 +7,6 @@ log/
 target/
 .DS_Store
 .gitattributes
+.superpowers/
+.playwright-mcp/
+CLAUDE.md

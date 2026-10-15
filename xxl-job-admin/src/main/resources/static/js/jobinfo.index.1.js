@@ -29,7 +29,7 @@ $(function() {
                 "defaultContent": '',  // 默认内容
                 "bSortable": false,
                 "visible": true,
-                "width": '7%',
+                "width": '5%',
                 "orderable": false,
                 "className": 'dt-body-center dt-head-center',
                 "render": function (data, type, row, meta) {
@@ -37,6 +37,11 @@ $(function() {
                     return '<input type="checkbox" class="row-checkbox" value="' + row.id + '">';
                 }
             },
+	                {
+	                	"data": 'id',
+	                	"visible" : true,
+	                	"width":'5%'
+	                },
 	                {
 	                	"data": 'jobGroup',
 	                	"visible" : false,
@@ -53,7 +58,7 @@ $(function() {
 	                {
 	                	"data": 'jobDesc',
 						"visible" : true,
-						"width":'25%'
+						"width":'23%'
 					},
 					{
 						"data": 'scheduleType',
@@ -69,7 +74,7 @@ $(function() {
 					},
 					{
 						"data": 'glueType',
-						"width":'25%',
+						"width":'24%',
 						"visible" : true,
 						"render": function ( data, type, row ) {
 							var glueTypeTitle = findGlueTypeTitle(row.glueType);
@@ -199,6 +204,186 @@ $(function() {
 
     // table data
     var tableData = {};
+
+    // ===== 子任务选择器：折叠摘要 + 展开 + 搜索添加 =====
+    var CHILD_JOB_MAX_LEN = 100;    // 与 xxl_job_info.child_jobid varchar(100) 对齐
+    var CHILD_JOB_OPTION_LIMIT = 50;
+    var allJobsCache = null;        // [{id, jobDesc, jobGroup}]，页面会话内缓存
+
+    function escapeHtml(str) {
+        return $('<div>').text(str == null ? '' : String(str)).html();
+    }
+
+    function jobGroupTitle(groupId) {
+        var title = '';
+        $("#jobGroup").find("option").each(function () {
+            if ($(this).attr('value') == groupId) {
+                title = $(this).html();
+                return false;
+            }
+        });
+        return title;
+    }
+
+    function loadAllJobs(callback) {
+        if (allJobsCache) { callback(allJobsCache); return; }
+        $.ajax({
+            url: base_url + '/jobinfo/pageList',
+            type: 'POST',
+            data: {
+                start: 0, length: 3000,
+                jobGroup: 0, triggerStatus: -1,     // 0 / -1 = 不过滤，取全部
+                jobDesc: '', executorHandler: '', author: ''
+            },
+            success: function (res) {
+                allJobsCache = [];
+                var rows = (res && res.data) ? res.data : [];
+                for (var i = 0; i < rows.length; i++) {
+                    allJobsCache.push({
+                        id: rows[i].id,
+                        jobDesc: rows[i].jobDesc,
+                        jobGroup: rows[i].jobGroup
+                    });
+                }
+                callback(allJobsCache);
+            },
+            error: function () {
+                allJobsCache = [];
+                callback(allJobsCache);
+            }
+        });
+    }
+
+    function initChildJobPicker($picker) {
+        var $hidden    = $picker.find("input[name='childJobId']");
+        var $count     = $picker.find(".child-job-count");
+        var $toggle    = $picker.find(".child-job-toggle");
+        var $expanded  = $picker.find(".child-job-expanded");
+        var $tags      = $picker.find(".child-job-tags");
+        var $search    = $picker.find(".child-job-search");
+        var $dropdown  = $picker.find(".child-job-dropdown");
+
+        var selected = [];      // 有序 id 数组
+
+        function findJob(id) {
+            if (!allJobsCache) return null;
+            for (var i = 0; i < allJobsCache.length; i++) {
+                if (allJobsCache[i].id == id) return allJobsCache[i];
+            }
+            return null;
+        }
+
+        function refresh() {
+            $hidden.val(selected.join(","));
+            $count.text("已选 " + selected.length + " 个子任务");
+
+            var html = "";
+            for (var i = 0; i < selected.length; i++) {
+                var job = findJob(selected[i]);
+                var label = job ? (job.id + " " + escapeHtml(job.jobDesc)) : selected[i];
+                html += '<span class="child-job-tag" data-id="' + selected[i] + '">'
+                      + label + ' <i class="child-job-remove">×</i></span>';
+            }
+            $tags.html(html);
+        }
+
+        function addId(id) {
+            if (selected.indexOf(id) >= 0) return;      // 已选，忽略
+            if (selected.concat([id]).join(",").length > CHILD_JOB_MAX_LEN) {
+                alert("子任务ID 总长度不能超过 " + CHILD_JOB_MAX_LEN + " 字符");
+                return;
+            }
+            selected.push(id);
+            refresh();
+        }
+
+        function removeId(id) {
+            var idx = selected.indexOf(id);
+            if (idx >= 0) { selected.splice(idx, 1); refresh(); }
+        }
+
+        // 展开 / 收起
+        $toggle.on('click', function () {
+            var willShow = $expanded.is(":hidden");
+            $expanded.toggle(willShow);
+            $toggle.text(willShow ? "收起 ▴" : "展开 ▾");
+            if (willShow) {
+                // 懒加载：展开时才拉任务列表，拿到后重绘标签（补上任务名）
+                loadAllJobs(function () { refresh(); $search.trigger('focus'); });
+            }
+        });
+
+        // 删除标签
+        $tags.on('click', '.child-job-remove', function () {
+            removeId(parseInt($(this).parent().attr('data-id'), 10));
+        });
+
+        // 搜索
+        $search.on('input', function () {
+            var kw = $.trim($(this).val()).toLowerCase();
+            if (kw.length === 0) { $dropdown.hide().empty(); return; }
+            loadAllJobs(function (jobs) {
+                var matched = [];
+                for (var i = 0; i < jobs.length && matched.length < CHILD_JOB_OPTION_LIMIT; i++) {
+                    var job = jobs[i];
+                    if (selected.indexOf(job.id) >= 0) continue;      // 已选的不用再列
+                    if ((job.id + " " + job.jobDesc).toLowerCase().indexOf(kw) >= 0) {
+                        matched.push(job);
+                    }
+                }
+                var html = "";
+                for (var j = 0; j < matched.length; j++) {
+                    html += '<div class="child-job-option" data-id="' + matched[j].id + '">'
+                          + '<span>' + escapeHtml(matched[j].id + "　" + matched[j].jobDesc) + '</span>'
+                          + '<span class="child-job-option-group">' + escapeHtml(jobGroupTitle(matched[j].jobGroup)) + '</span>'
+                          + '</div>';
+                }
+                if (html.length === 0) {
+                    html = '<div class="child-job-empty">没有匹配的任务</div>';
+                }
+                $dropdown.html(html).show();
+            });
+        });
+
+        // 点候选项加进标签
+        $dropdown.on('click', '.child-job-option', function () {
+            addId(parseInt($(this).attr('data-id'), 10));
+            $search.val("").trigger('focus');
+            $dropdown.hide().empty();
+        });
+
+        return {
+            setValue: function (str) {
+                selected = [];
+                if (str) {
+                    var parts = String(str).split(",");
+                    for (var i = 0; i < parts.length; i++) {
+                        var v = $.trim(parts[i]);
+                        if (v.length > 0) selected.push(parseInt(v, 10));
+                    }
+                }
+                refresh();
+            },
+            clear: function () {
+                selected = [];
+                $search.val("");
+                $dropdown.hide().empty();
+                $expanded.hide();
+                $toggle.text("展开 ▾");
+                refresh();
+            }
+        };
+    }
+
+    var addChildJobPicker = initChildJobPicker($("#addModal .child-job-picker"));
+    var updateChildJobPicker = initChildJobPicker($("#updateModal .child-job-picker"));
+
+    // 点选择器外面收起候选下拉
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.child-job-picker').length) {
+            $('.child-job-dropdown').hide();
+        }
+    });
 
     $('#checkBoxAll').on('click', function() {
         var $allCheckboxes = $('.row-checkbox');
@@ -706,6 +891,7 @@ $(function() {
 	$("#addModal").on('hide.bs.modal', function () {
         addModalValidate.resetForm();
 		$("#addModal .form")[0].reset();
+		addChildJobPicker.clear();
 		$("#addModal .form .form-group").removeClass("has-error");
 		$(".remote_panel").show();	// remote
 
@@ -795,6 +981,7 @@ $(function() {
 		// fill advanced
 		$('#updateModal .form select[name=executorRouteStrategy] option[value='+ row.executorRouteStrategy +']').prop('selected', true);
 		$("#updateModal .form input[name='childJobId']").val( row.childJobId );
+		updateChildJobPicker.setValue( row.childJobId );
 		$('#updateModal .form select[name=misfireStrategy] option[value='+ row.misfireStrategy +']').prop('selected', true);
 		$('#updateModal .form select[name=executorBlockStrategy] option[value='+ row.executorBlockStrategy +']').prop('selected', true);
 		$("#updateModal .form input[name='executorTimeout']").val( row.executorTimeout );
@@ -890,6 +1077,7 @@ $(function() {
 	$("#updateModal").on('hide.bs.modal', function () {
         updateModalValidate.resetForm();
         $("#updateModal .form")[0].reset();
+        updateChildJobPicker.clear();
         $("#updateModal .form .form-group").removeClass("has-error");
 	});
 
@@ -950,6 +1138,7 @@ $(function() {
 		// fill advanced
 		$('#addModal .form select[name=executorRouteStrategy] option[value='+ row.executorRouteStrategy +']').prop('selected', true);
 		$("#addModal .form input[name='childJobId']").val( row.childJobId );
+		addChildJobPicker.setValue( row.childJobId );
 		$('#addModal .form select[name=misfireStrategy] option[value='+ row.misfireStrategy +']').prop('selected', true);
 		$('#addModal .form select[name=executorBlockStrategy] option[value='+ row.executorBlockStrategy +']').prop('selected', true);
 		$("#addModal .form input[name='executorTimeout']").val( row.executorTimeout );

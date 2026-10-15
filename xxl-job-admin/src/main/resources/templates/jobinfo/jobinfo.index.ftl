@@ -7,6 +7,24 @@
   	<link rel="stylesheet" href="${request.contextPath}/static/adminlte/bower_components/datatables.net-bs/css/dataTables.bootstrap.min.css">
     <!-- bootstrap-select -->
     <link rel="stylesheet" href="${request.contextPath}/static/adminlte/bower_components/bootstrap-select/bootstrap-select.min.css">
+    <style>
+        /* 子任务选择器 */
+        .child-job-picker { border:1px solid #d2d6de; border-radius:3px; background:#fff; }
+        .child-job-collapsed { display:flex; align-items:center; justify-content:space-between; padding:6px 10px; }
+        .child-job-count { color:#666; font-size:12px; }
+        .child-job-expanded { border-top:1px solid #e4e7ec; }
+        .child-job-tags { display:flex; flex-wrap:wrap; gap:6px; padding:8px; max-height:110px; overflow-y:auto; }
+        .child-job-tags:empty { display:none; }
+        .child-job-tag { display:inline-flex; align-items:center; gap:5px; background:#eef4ff; border:1px solid #c7d9ff; color:#1d4ed8; border-radius:3px; padding:2px 6px; font-size:12px; white-space:nowrap; }
+        .child-job-remove { color:#7c93c4; cursor:pointer; font-style:normal; }
+        .child-job-remove:hover { color:#d9534f; }
+        .child-job-search-wrap { position:relative; padding:8px; border-top:1px solid #f2f4f7; }
+        .child-job-dropdown { position:absolute; left:8px; right:8px; top:100%; margin-top:-4px; border:1px solid #d2d6de; border-radius:3px; background:#fff; box-shadow:0 4px 12px rgba(16,24,40,.12); z-index:1050; max-height:220px; overflow-y:auto; }
+        .child-job-option { padding:6px 10px; display:flex; justify-content:space-between; cursor:pointer; font-size:12px; }
+        .child-job-option:hover { background:#f7f8fa; }
+        .child-job-option-group { color:#98a2b3; }
+        .child-job-empty { padding:6px 10px; color:#98a2b3; font-size:12px; }
+    </style>
     <title>${I18n.admin_name}</title>
 </head>
 <body class="hold-transition skin-blue sidebar-mini <#if cookieMap?exists && cookieMap["xxljob_adminlte_settings"]?exists && "off" == cookieMap["xxljob_adminlte_settings"].value >sidebar-collapse</#if>">
@@ -92,8 +110,8 @@
 			              	<table id="job_list" class="table table-bordered table-striped" width="100%" >
 				                <thead>
 					            	<tr>
-<#--					            		<th name="id" >${I18n.jobinfo_field_id}</th>-->
                                         <th name="selectCheck"><input type="checkbox" id="checkBoxAll"/></th>
+                                        <th name="id" >${I18n.jobinfo_field_id}</th>
 					                	<th name="jobGroup" >${I18n.jobinfo_field_jobgroup}</th>
 					                  	<th name="jobDesc" >${I18n.jobinfo_field_jobdesc}</th>
                                         <th name="scheduleType" >${I18n.schedule_type}</th>
@@ -218,7 +236,22 @@
                         </div>
 
                         <label for="lastname" class="col-sm-2 control-label">${I18n.jobinfo_field_childJobId}<font color="black">*</font></label>
-                        <div class="col-sm-4"><input type="text" class="form-control" name="childJobId" placeholder="${I18n.jobinfo_field_childJobId_placeholder}" maxlength="100" ></div>
+                        <div class="col-sm-4">
+                            <div class="child-job-picker">
+                                <div class="child-job-collapsed">
+                                    <span class="child-job-count">已选 0 个子任务</span>
+                                    <button type="button" class="btn btn-xs btn-default child-job-toggle">展开 ▾</button>
+                                </div>
+                                <div class="child-job-expanded" style="display:none;">
+                                    <div class="child-job-tags"></div>
+                                    <div class="child-job-search-wrap">
+                                        <input type="text" class="form-control child-job-search" placeholder="搜索并添加：任务名或 ID" autocomplete="off" >
+                                        <div class="child-job-dropdown" style="display:none;"></div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="childJobId">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -463,7 +496,22 @@ exit 0
                         </div>
 
                         <label for="lastname" class="col-sm-2 control-label">${I18n.jobinfo_field_childJobId}<font color="black">*</font></label>
-                        <div class="col-sm-4"><input type="text" class="form-control" name="childJobId" placeholder="${I18n.jobinfo_field_childJobId_placeholder}" maxlength="100" ></div>
+                        <div class="col-sm-4">
+                            <div class="child-job-picker">
+                                <div class="child-job-collapsed">
+                                    <span class="child-job-count">已选 0 个子任务</span>
+                                    <button type="button" class="btn btn-xs btn-default child-job-toggle">展开 ▾</button>
+                                </div>
+                                <div class="child-job-expanded" style="display:none;">
+                                    <div class="child-job-tags"></div>
+                                    <div class="child-job-search-wrap">
+                                        <input type="text" class="form-control child-job-search" placeholder="搜索并添加：任务名或 ID" autocomplete="off" >
+                                        <div class="child-job-dropdown" style="display:none;"></div>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="childJobId">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
